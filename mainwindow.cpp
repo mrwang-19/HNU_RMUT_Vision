@@ -3,7 +3,7 @@
 #include <QFutureInterfaceBase>
 #include <QDateTime>
 #include <QDebug>
-
+//202-4-24
 using namespace cv;
 //Mat src(1024,1280,CV_8UC3);
 MainWindow* MainWindow::pointer_=nullptr;
