@@ -6,6 +6,8 @@
 //202-4-24
 using namespace cv;
 //Mat src(1024,1280,CV_8UC3);
+#define WIDTH 1280
+#define HEIGHT 1024
 MainWindow* MainWindow::pointer_=nullptr;
 
 MainWindow::MainWindow(QWidget *parent)
@@ -13,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    rec=new VideoWriter;
     pointer_=this;
 //    this->self=this;
     connect(this,&MainWindow::new_image,this,&MainWindow::update_img);
@@ -80,6 +83,9 @@ void MainWindow::on_OpenButton_clicked()
         auto ststus=GXOpenDevice(&stOpenParam, &hDevice);
         if(ststus==GX_STATUS_SUCCESS)
         {
+            //自动白平衡
+            status = GXSetEnum(hDevice,GX_ENUM_BALANCE_WHITE_AUTO,
+            GX_BALANCE_WHITE_AUTO_CONTINUOUS);
             GXRegisterCaptureCallback(hDevice, NULL,OnFrameCallbackFun);
             GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_START);
 //            namedWindow("image", WINDOW_NORMAL);
@@ -89,14 +95,53 @@ void MainWindow::on_OpenButton_clicked()
         }
     }
 }
+Mat pretreatment(Mat frame)
+{
+    Mat channels[3],mid,binary;
+    split(frame,channels);
+    subtract(channels[2],channels[1],mid);
+    //cv::imshow("img2",channels[1]);
+    threshold(mid,binary,100,255,THRESH_BINARY);
+    Mat element = getStructuringElement(MORPH_ELLIPSE,Point(5,5));
+    dilate(binary,mid,element);
+    Mat kernel = getStructuringElement(MORPH_ELLIPSE,Point(7,7));
+    morphologyEx(mid,binary,MORPH_CLOSE,kernel);
+    return binary;
+//    cvThreshold(mid,binary,100,255,CV_THRESH_BINARY);
+}
 void MainWindow::update_img(char* img_data,int height,int width)
 {
     auto src = Mat(height,width,CV_8UC3);
+    auto fliped = Mat(height,width,CV_8UC3);
     memcpy(src.data,img_data,width*height*3);
-    cv::imshow("img",src);
+    cv::flip(src,fliped,-1);
+    if(rec->isOpened())
+        (*rec)<<fliped;
+    else
+        cv::imshow("img",fliped);
+    Mat bin=pretreatment(fliped);
+    //cv::imshow("img",fliped);
 //    //output timetamp
     QDateTime dateTime = QDateTime::currentDateTime();
     QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
     qDebug()<<timestamp;
     delete [] img_data;
+}
+
+void MainWindow::on_RecordButton_clicked()
+{
+    if(!recording_flag)
+    {
+        QDateTime dateTime = QDateTime::currentDateTime();
+        QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
+        rec->open("/home/rm/视频/"+timestamp.toStdString()+".avi",CV_FOURCC('X','V','I','D'),150,Size(WIDTH,HEIGHT),true);
+        ui->RecordButton->setText("Stop Record");
+        recording_flag=true;
+    }
+    else
+    {
+        recording_flag=false;
+        ui->RecordButton->setText("Record");
+        rec->release();
+    }
 }
