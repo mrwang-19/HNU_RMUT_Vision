@@ -9,10 +9,10 @@
 using namespace cv;
 using namespace std;
 //Mat src(1024,1280,CV_8UC3);
-#define WIDTH 1024
-#define HEIGHT 768
+#define WIDTH 640
+#define HEIGHT 480
 #define PI 3.1415926
-#define _100_FPS
+#define _150_FPS
 
 MainWindow* MainWindow::pointer_=nullptr;
 
@@ -113,30 +113,48 @@ Mat pretreatment(Mat frame)
 }
 void MainWindow::update_img(char* img_data,int height,int width)
 {
+    QDateTime dateTime = QDateTime::currentDateTime();
+    QString timestamp = dateTime.toString("mm:ss.zzz");
+    qDebug()<<timestamp;
+
+    static int fream_count=0;
     auto src = Mat(height,width,CV_8UC3);
     auto fliped = Mat(height,width,CV_8UC3);
+
     memcpy(src.data,img_data,width*height*3);
 //    cv::imshow("img",src);
     cv::flip(src,fliped,-1);
-    if(rec->isOpened())
-        (*rec)<<fliped;
-//    else
     Mat bin=pretreatment(fliped);
     Point2f center,armor;
     detect(bin,center,armor);
-
 //    drawContours(fliped,contours,max,Scalar(0,255,0),5);
 //    drawContours(fliped,contours,min,Scalar(255,0,0),5);
+    if(recording_flag)
+    {
+//        fream_count++;
+        (*rec)<<fliped;
+        fprintf(csv_file,"%s,%f,%f,%f,%f\n",timestamp.toStdString().c_str(),center.x,center.y,armor.x,armor.y);
+//        if(fream_count%5==0)
+//        {
+//            cvtColor(fliped,src, cv::COLOR_RGB2BGR);
+//            QImage img=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
+//        //    QImage img=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
+//            ui->ImagelLabel->setPixmap(QPixmap::fromImage(img));
+//            fream_count=0;
+//        }
+    }
+    else
+    {
+    circle(fliped,center,20,Scalar(0,255,0),-1);
+    circle(fliped,armor,20,Scalar(255,0,0),-1);
 //    QImage img=cvMat2QImage(fliped);
-//    cvtColor(fliped,src, cv::COLOR_RGB2BGR);
-//    QImage img=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
+    cvtColor(fliped,src, cv::COLOR_RGB2BGR);
+    QImage img=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
 //    QImage img=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
-//    ui->ImagelLabel->setPixmap(QPixmap::fromImage(img));
+    ui->ImagelLabel->setPixmap(QPixmap::fromImage(img));
+    }
 //    cv::imshow("img",fliped);
     //打印时间戳
-    QDateTime dateTime = QDateTime::currentDateTime();
-    QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
-    qDebug()<<timestamp;
     delete [] img_data;
 }
 
@@ -146,9 +164,21 @@ void MainWindow::on_RecordButton_clicked()
     if(!recording_flag)
     {
         QDateTime dateTime = QDateTime::currentDateTime();
-        QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
-        bool tmp = rec->open("./1.mp4",VideoWriter::fourcc('X', 'V', 'I', 'D'),100,Size(WIDTH,HEIGHT),true);
-        qDebug()<<tmp;
+        QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm");
+        QString path="/home/rm/视频/"+timestamp+".avi";
+        QString path2="/home/rm/视频/"+timestamp+".csv";
+        char *p=new char[path2.length()];
+        strcpy(p,path2.toStdString().data());
+        csv_file=fopen(p,"w");
+//        qDebug()<<p;
+#ifdef _150_FPS
+        bool tmp = rec->open(path.toStdString(),CV_FOURCC('X','V','I','D'),150,Size(WIDTH,HEIGHT),true);
+#elif defined (_100_FPS)
+        bool tmp = rec->open(path.toStdString(),CV_FOURCC('X','V','I','D'),100,Size(WIDTH,HEIGHT),true);
+#endif
+//        qDebug()<<tmp;
+        if(!tmp)
+            exit(-2);
         ui->RecordButton->setText("Stop Record");
         recording_flag=true;
     }
@@ -157,6 +187,8 @@ void MainWindow::on_RecordButton_clicked()
         recording_flag=false;
         ui->RecordButton->setText("Record");
         rec->release();
+        fflush(csv_file);
+        fclose(csv_file);
     }
 }
 
@@ -204,13 +236,14 @@ bool MainWindow::detect(cv::Mat src,cv::Point2f &center,cv::Point2f &armor)
     {
         auto rect=minAreaRect(contours[i]);
         auto tmp = rect.size.area();
+        qDebug()<<tmp;
         if(tmp>max_area)
         {
             max_area=tmp;
 //            max=i;
             armor=rect.center;
         }
-        else if(tmp<min_area)
+        if(tmp<min_area)
         {
             min_area=tmp;
 //            min=i;

@@ -37,5 +37,6 @@ private:
     static QImage cvMat2QImage(const cv::Mat& mat);
     bool inline detect(cv::Mat src,cv::Point2f &center,cv::Point2f &armor);
     static bool cam_init(GX_DEV_HANDLE hDevice);
+    FILE* csv_file=nullptr;
 };
 #endif // MAINWINDOW_H
