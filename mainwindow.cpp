@@ -12,7 +12,7 @@ using namespace std;
 #define WIDTH 640
 #define HEIGHT 480
 #define PI 3.1415926
-#define _150_FPS
+#define _100_FPS
 
 MainWindow* MainWindow::pointer_=nullptr;
 
@@ -98,6 +98,11 @@ void MainWindow::on_OpenButton_clicked()
         }
     }
 }
+/**
+ * @brief pretreatment 预处理采集到的图像帧
+ * @param frame 采集到的原始图像帧
+ * @return 预处理后的二值化图像
+ */
 Mat pretreatment(Mat frame)
 {
     Mat channels[3],mid,binary;
@@ -110,7 +115,6 @@ Mat pretreatment(Mat frame)
     Mat kernel = getStructuringElement(MORPH_ELLIPSE,Point(7,7));
     morphologyEx(mid,binary,MORPH_CLOSE,kernel);
     return binary;
-//    cvThreshold(mid,binary,100,255,CV_THRESH_BINARY);
 }
 void MainWindow::update_img(char* img_data,int height,int width)
 {
@@ -174,9 +178,9 @@ void MainWindow::on_RecordButton_clicked()
         csv_file=fopen(p,"w");
 //        qDebug()<<p;
 #ifdef _150_FPS
-        bool tmp = rec->open(path.toStdString(),VideoWriter::fourcc('X','V','I','D'),150,Size(WIDTH,HEIGHT),true);
+        bool tmp = rec->open(path.toStdString(),CV_FOURCC('X','V','I','D'),150,Size(WIDTH,HEIGHT),true);
 #elif defined (_100_FPS)
-        bool tmp = rec->open(path.toStdString(),CV_FOURCC('X','V','I','D'),100,Size(WIDTH,HEIGHT),true);
+        bool tmp = rec->open(path.toStdString(),VideoWriter::fourcc('X','V','I','D'),100,Size(WIDTH,HEIGHT),true);
 #endif
 //        qDebug()<<tmp;
         if(!tmp)
