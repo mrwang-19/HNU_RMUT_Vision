@@ -21,7 +21,8 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ui->ImagelLabel->setScaledContents(true);
+    ui->OriginalImage->setScaledContents(true);
+    ui->ProcessedImage->setScaledContents(true);
     rec=new VideoWriter;
     pointer_=this;
     connect(this,&MainWindow::new_image,this,&MainWindow::update_img,Qt::QueuedConnection);
@@ -72,7 +73,7 @@ void GX_STDC MainWindow::OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame)
 void MainWindow::on_OpenButton_clicked()
 {
     GX_OPEN_PARAM stOpenParam;
-    QString SN=ui->SNEdit->toPlainText();
+    QString SN=ui->SNEdit->text();
     char *sn = new char[SN.length()];
     strcpy(sn,SN.toStdString().c_str());
 //    stOpenParam.openMode = GX_OPEN_SN;
@@ -149,9 +150,10 @@ void MainWindow::update_img(char* img_data,int height,int width)
     circle(fliped,armor,20,Scalar(255,0,0),-1);
 //    QImage img=cvMat2QImage(fliped);
     cvtColor(fliped,src, cv::COLOR_RGB2BGR);
-    QImage img=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
-//    QImage img=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
-    ui->ImagelLabel->setPixmap(QPixmap::fromImage(img));
+    QImage ori=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
+    QImage prc=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
+    ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
+    ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
     }
 //    cv::imshow("img",fliped);
     //打印时间戳
@@ -172,7 +174,7 @@ void MainWindow::on_RecordButton_clicked()
         csv_file=fopen(p,"w");
 //        qDebug()<<p;
 #ifdef _150_FPS
-        bool tmp = rec->open(path.toStdString(),CV_FOURCC('X','V','I','D'),150,Size(WIDTH,HEIGHT),true);
+        bool tmp = rec->open(path.toStdString(),VideoWriter::fourcc('X','V','I','D'),150,Size(WIDTH,HEIGHT),true);
 #elif defined (_100_FPS)
         bool tmp = rec->open(path.toStdString(),CV_FOURCC('X','V','I','D'),100,Size(WIDTH,HEIGHT),true);
 #endif
