@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+
 #include <QFutureInterfaceBase>
 #include <QDateTime>
 #include <QDebug>
@@ -12,7 +13,7 @@ using namespace std;
 #define WIDTH 640
 #define HEIGHT 480
 #define PI 3.1415926
-#define _100_FPS
+#define _150_FPS
 
 MainWindow* MainWindow::pointer_=nullptr;
 
@@ -23,16 +24,18 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     ui->OriginalImage->setScaledContents(true);
     ui->ProcessedImage->setScaledContents(true);
-    rec=new VideoWriter;
     pointer_=this;
-    connect(this,&MainWindow::new_image,this,&MainWindow::update_img,Qt::QueuedConnection);
+//    connect(this,&MainWindow::new_image,this,&MainWindow::update_img,Qt::QueuedConnection);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
 }
-
+/// 采集完成回调函数，每拍一帧就会在大恒SDK的采集线程中被调用一次
+/// \brief MainWindow::OnFrameCallbackFun
+/// \param pFrame 包含了刚采集的一帧的数据
+///
 void GX_STDC MainWindow::OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame)
 {
     if (pFrame->status == GX_FRAME_STATUS_SUCCESS)
@@ -62,7 +65,7 @@ void GX_STDC MainWindow::OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame)
             return;
         }
         //发射信号，传输图片数据
-        emit pointer_->new_image(pRGB24Buf,pFrame->nHeight,pFrame->nWidth);
+        emit pointer_->newImage(pRGB24Buf,pFrame->nHeight,pFrame->nWidth);
     }
 //    QDateTime dateTime = QDateTime::currentDateTime();
 //    QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
@@ -72,130 +75,103 @@ void GX_STDC MainWindow::OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame)
 
 void MainWindow::on_OpenButton_clicked()
 {
-    GX_OPEN_PARAM stOpenParam;
-    QString SN=ui->SNEdit->text();
-    char *sn = new char[SN.length()];
-    strcpy(sn,SN.toStdString().c_str());
-//    stOpenParam.openMode = GX_OPEN_SN;
-////    stOpenParam.pszContent = sn;
-//    stOpenParam.pszContent = "KE0210020155";
-    uint32_t nDeviceNum=0;
-    auto status = GXUpdateDeviceList(&nDeviceNum, 1000);
-    if (status == GX_STATUS_SUCCESS&&nDeviceNum> 0)
+    if(open_flag)
     {
-        stOpenParam.accessMode = GX_ACCESS_EXCLUSIVE;
-        stOpenParam.openMode = GX_OPEN_INDEX;
-        stOpenParam.pszContent = "1";
-        auto ststus=GXOpenDevice(&stOpenParam, &hDevice);
-        if(ststus==GX_STATUS_SUCCESS)
-        {
-            //初始化相机参数
-            cam_init(hDevice);
-            //注册采集回调函数
-            GXRegisterCaptureCallback(hDevice, NULL,OnFrameCallbackFun);
-            //发送开采命令
-            GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_START);
-        }
+        //发送停采命令
+        GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_STOP);
+        //关闭相机
+        GXCloseDevice(hDevice);
+        ui->OpenButton->setText("打开");
+        open_flag=false;
     }
-}
-/**
- * @brief pretreatment 预处理采集到的图像帧
- * @param frame 采集到的原始图像帧
- * @return 预处理后的二值化图像
- */
-Mat pretreatment(Mat frame)
-{
-    Mat channels[3],mid,binary;
-    split(frame,channels);
-    subtract(channels[2],channels[1],mid);
-    //cv::imshow("img2",channels[1]);
-    threshold(mid,binary,100,255,THRESH_BINARY);
-    Mat element = getStructuringElement(MORPH_ELLIPSE,Point(5,5));
-    dilate(binary,mid,element);
-    Mat kernel = getStructuringElement(MORPH_ELLIPSE,Point(7,7));
-    morphologyEx(mid,binary,MORPH_CLOSE,kernel);
-    return binary;
-}
-void MainWindow::update_img(char* img_data,int height,int width)
-{
-    QDateTime dateTime = QDateTime::currentDateTime();
-    QString timestamp = dateTime.toString("mm:ss.zzz");
-    qDebug()<<timestamp;
-
-    static int fream_count=0;
-    auto src = Mat(height,width,CV_8UC3);
-    auto fliped = Mat(height,width,CV_8UC3);
-
-    memcpy(src.data,img_data,width*height*3);
-//    cv::imshow("img",src);
-    cv::flip(src,fliped,-1);
-    Mat bin=pretreatment(fliped);
-    Point2f center,armor;
-    detect(bin,center,armor);
-//    drawContours(fliped,contours,max,Scalar(0,255,0),5);
-//    drawContours(fliped,contours,min,Scalar(255,0,0),5);
-    if(recording_flag)
+    else if(hDevice==nullptr)
     {
-//        fream_count++;
-        (*rec)<<fliped;
-        fprintf(csv_file,"%s,%f,%f,%f,%f\n",timestamp.toStdString().c_str(),center.x,center.y,armor.x,armor.y);
-//        if(fream_count%5==0)
-//        {
-//            cvtColor(fliped,src, cv::COLOR_RGB2BGR);
-//            QImage img=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
-//        //    QImage img=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
-//            ui->ImagelLabel->setPixmap(QPixmap::fromImage(img));
-//            fream_count=0;
-//        }
+        GX_OPEN_PARAM stOpenParam;
+        QString SN=ui->SNEdit->text();
+//        QString
+        char *sn = new char[SN.length()];
+        strcpy(sn,SN.toStdString().c_str());
+        //    stOpenParam.openMode = GX_OPEN_SN;
+        ////    stOpenParam.pszContent = sn;
+        //    stOpenParam.pszContent = "KE0210020155";
+        uint32_t nDeviceNum=0;
+        auto status = GXUpdateDeviceList(&nDeviceNum, 1000);
+        if (status == GX_STATUS_SUCCESS&&nDeviceNum> 0)
+        {
+            stOpenParam.accessMode = GX_ACCESS_EXCLUSIVE;
+            stOpenParam.openMode = GX_OPEN_INDEX;
+            stOpenParam.pszContent = "1";
+            auto ststus=GXOpenDevice(&stOpenParam, &hDevice);
+            if(ststus==GX_STATUS_SUCCESS)
+            {
+                //初始化相机参数
+                cam_init(hDevice);
+                //注册采集回调函数
+                GXRegisterCaptureCallback(hDevice, NULL,OnFrameCallbackFun);
+                //发送开采命令
+                GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_START);
+            }
+//            processor=new ImageProcessor()
+            ui->OpenButton->setText("关闭");
+            open_flag=1;
+        }
     }
     else
     {
-    circle(fliped,center,20,Scalar(0,255,0),-1);
-    circle(fliped,armor,20,Scalar(255,0,0),-1);
-//    QImage img=cvMat2QImage(fliped);
-    cvtColor(fliped,src, cv::COLOR_RGB2BGR);
-    QImage ori=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
-    QImage prc=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
-    ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
-    ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
+        GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_START);
+        ui->OpenButton->setText("关闭");
+        open_flag=1;
     }
-//    cv::imshow("img",fliped);
-    //打印时间戳
-    delete [] img_data;
 }
+
+//void MainWindow::update_img(char* img_data,int height,int width)
+//{
+//    //打印时间戳
+//    QDateTime dateTime = QDateTime::currentDateTime();
+//    QString timestamp = dateTime.toString("mm:ss.zzz");
+//    qDebug()<<timestamp;
+
+//    static int fream_count=0;
+//    auto src = Mat(height,width,CV_8UC3);
+//    //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）
+//    for(int i=0;i<width*height*3;i++)
+//        src.data[width*height*3-i-1]=img_data[i];
+
+////    Mat bin=pretreatment(src);
+//    Point2f center,armor;
+////    detect(bin,center,armor);
+
+//    if(recording_flag)
+//    {
+////        fream_count++;
+//        (*rec)<<src;
+//        (*csv_save)<<timestamp.toStdString()<<","<<center.x<<","<<center.y<<","<<armor.x<<","<<armor.y;
+////        if(fream_count%5==0)
+////        {
+////            cvtColor(fliped,src, cv::COLOR_RGB2BGR);
+////            QImage img=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
+////        //    QImage img=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
+////            ui->ImagelLabel->setPixmap(QPixmap::fromImage(img));
+////            fream_count=0;
+////        }
+//    }
+//    else
+//    {
+//    circle(src,center,20,Scalar(0,255,0),-1);
+//    circle(src,armor,20,Scalar(255,0,0),-1);
+//    QImage ori=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
+////    QImage prc=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
+//    ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
+//    ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
+//    }
+//    //删除帧数据
+//    delete [] img_data;
+//}
 
 
 void MainWindow::on_RecordButton_clicked()
 {
-    if(!recording_flag)
-    {
-        QDateTime dateTime = QDateTime::currentDateTime();
-        QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm");
-        QString path="/home/rm/视频/"+timestamp+".avi";
-        QString path2="/home/rm/视频/"+timestamp+".csv";
-        char *p=new char[path2.length()];
-        strcpy(p,path2.toStdString().data());
-        csv_file=fopen(p,"w");
-//        qDebug()<<p;
-#ifdef _150_FPS
-        bool tmp = rec->open(path.toStdString(),CV_FOURCC('X','V','I','D'),150,Size(WIDTH,HEIGHT),true);
-#elif defined (_100_FPS)
-        bool tmp = rec->open(path.toStdString(),VideoWriter::fourcc('X','V','I','D'),100,Size(WIDTH,HEIGHT),true);
-#endif
-//        qDebug()<<tmp;
-        if(!tmp)
-            exit(-2);
-        ui->RecordButton->setText("Stop Record");
-        recording_flag=true;
-    }
-    else
-    {
-        recording_flag=false;
-        ui->RecordButton->setText("Record");
-        rec->release();
-        fflush(csv_file);
-        fclose(csv_file);
-    }
+
 }
 
 /**
@@ -222,64 +198,8 @@ bool MainWindow::cam_init(GX_DEV_HANDLE hDevice)
     status &= GXSetInt(hDevice, GX_INT_OFFSET_Y, (1024-HEIGHT)/2);
     return status;
 }
-/**
- * @brief MainWindow::detect 由预处理过的视频识别能量机关的中心和目标装甲板的像素坐标
- * @param src 经过预处理（二值化）的图片
- * @param center 能量机关的中心
- * @param armor 目标装甲板的中心
- * @return 是否检测到目标
- */
-bool MainWindow::detect(cv::Mat src,cv::Point2f &center,cv::Point2f &armor)
-{
-    vector<vector<Point>> contours;
-    vector<Vec4i> hierarchy;
-    findContours(src,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
-//    int max=0,min=0;
-    float max_area=0.0,min_area=10000.0;
-    if(contours.size()<2)
-        return false;
-    for(int i=0;i<contours.size();i++)
-    {
-        auto rect=minAreaRect(contours[i]);
-        auto tmp = rect.size.area();
-        qDebug()<<tmp;
-        if(tmp>max_area)
-        {
-            max_area=tmp;
-//            max=i;
-            armor=rect.center;
-        }
-        if(tmp<min_area)
-        {
-            min_area=tmp;
-//            min=i;
-            center=rect.center;
-        }
-//        qDebug()<<i<<":"<<rect.size.aspectRatio();
-//        if(abs(rect.size.aspectRatio()-0.6)<0.5)
-//        {
-//            max_1=i;
-//        }
-//        else {
-//            max_2=i;
-//        }
-//        if()
-//        minEnclosingCircle(contours[i],center,radius);
-//        float r=contourArea(contours[i])/(rect.area());
-//        if(r>rate_1)
-//        {
-//            rate_1=r;
-//            max_1=i;
-//        }
-//        r=contourArea(contours[i])/(PI*radius*radius);
-//        if(r>rate_2)
-//        {
-//            rate_1=r;
-//            max_2=i;
-//        }
-    }
-    return true;
-}
+
+
 QImage MainWindow::cvMat2QImage(const cv::Mat& mat)
 {
     // 8-bits unsigned, NO. OF CHANNELS = 1

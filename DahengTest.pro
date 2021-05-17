@@ -11,13 +11,17 @@ CONFIG += c++11
 INCLUDEPATH += /usr/local/include/opencv4 \
 
 SOURCES += \
+    imageprocessor.cpp \
     main.cpp \
-    mainwindow.cpp \
+    mainwindow.cpp \ \
+    transceiver.cpp
 
 HEADERS += \
     Daheng_inc/DxImageProc.h \
     Daheng_inc/GxIAPI.h \
-    mainwindow.h
+    imageprocessor.h \
+    mainwindow.h \
+    transceiver.h
 
 FORMS += \
     mainwindow.ui

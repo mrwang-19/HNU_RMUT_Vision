@@ -2,11 +2,16 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QThread>
+
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui.hpp"
+
 #include "Daheng_inc/DxImageProc.h"
 #include "Daheng_inc/GxIAPI.h"
+
+#include "imageprocessor.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -23,20 +28,23 @@ public:
 
 private slots:
     void on_OpenButton_clicked();
-    void update_img(char* img_data,int height,int width);
     void on_RecordButton_clicked();
 
 signals:
-    void new_image(char* img_data,int height,int width);
+    void newImage(char* img_data,int height,int width);
+    void startRecording(QString path);
+    void stopRecording();
+
 private:
+    //变量
     Ui::MainWindow *ui;
-    GX_DEV_HANDLE hDevice = nullptr;
-    cv::VideoWriter *rec =nullptr;
-    bool recording_flag=false;
+    GX_DEV_HANDLE hDevice = nullptr;        //相机句柄
+    ImageProcessor * processor = nullptr;   //图像处理线程类
+    QThread processorHandler;               //图像处理线程句柄
+    bool open_flag=false;                   //是否已经开采标记
+    //函数
     static void GX_STDC OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame);
     static QImage cvMat2QImage(const cv::Mat& mat);
-    bool inline detect(cv::Mat src,cv::Point2f &center,cv::Point2f &armor);
     static bool cam_init(GX_DEV_HANDLE hDevice);
-    FILE* csv_file=nullptr;
 };
 #endif // MAINWINDOW_H

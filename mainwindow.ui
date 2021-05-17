@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1029</width>
-    <height>641</height>
+    <width>1016</width>
+    <height>642</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
@@ -18,7 +24,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>420</y>
+      <y>460</y>
       <width>261</width>
       <height>171</height>
      </rect>
@@ -34,21 +40,21 @@
      <item row="1" column="0">
       <widget class="QLabel" name="label_5">
        <property name="text">
-        <string>Exposure time</string>
+        <string>曝光时长</string>
        </property>
       </widget>
      </item>
      <item row="2" column="0">
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>SavePath</string>
+        <string>保存路径</string>
        </property>
       </widget>
      </item>
      <item row="3" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>Width</string>
+        <string>宽度</string>
        </property>
       </widget>
      </item>
@@ -59,24 +65,39 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QLineEdit" name="lineEdit"/>
-     </item>
      <item row="2" column="1">
-      <widget class="QLineEdit" name="lineEdit_2"/>
+      <widget class="QLineEdit" name="savePathEdit"/>
      </item>
      <item row="3" column="1">
-      <widget class="QSpinBox" name="spinBox"/>
+      <widget class="QSpinBox" name="widthSpinBox">
+       <property name="maximum">
+        <number>1280</number>
+       </property>
+      </widget>
      </item>
      <item row="4" column="0">
       <widget class="QLabel" name="label_6">
        <property name="text">
-        <string>Hieght</string>
+        <string>高度</string>
        </property>
       </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QSpinBox" name="spinBox_2"/>
+      <widget class="QSpinBox" name="heightSpinBox">
+       <property name="maximum">
+        <number>1024</number>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QSpinBox" name="exposureSpinBox">
+       <property name="minimum">
+        <number>1000</number>
+       </property>
+       <property name="maximum">
+        <number>2000000</number>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -84,7 +105,7 @@
     <property name="geometry">
      <rect>
       <x>630</x>
-      <y>540</y>
+      <y>580</y>
       <width>341</width>
       <height>41</height>
      </rect>
@@ -93,14 +114,14 @@
      <item>
       <widget class="QPushButton" name="OpenButton">
        <property name="text">
-        <string>Open</string>
+        <string>打开</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="RecordButton">
        <property name="text">
-        <string>Record</string>
+        <string>录制</string>
        </property>
       </widget>
      </item>
@@ -110,7 +131,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>20</y>
+      <y>60</y>
       <width>1001</width>
       <height>391</height>
      </rect>
@@ -119,7 +140,7 @@
      <item>
       <widget class="QLabel" name="OriginalImage">
        <property name="text">
-        <string>TextLabel</string>
+        <string/>
        </property>
       </widget>
      </item>
@@ -132,14 +153,39 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>TextLabel</string>
+        <string/>
        </property>
       </widget>
      </item>
     </layout>
    </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>30</y>
+      <width>67</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>原始图像</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_7">
+    <property name="geometry">
+     <rect>
+      <x>716</x>
+      <y>30</y>
+      <width>81</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>二值化图像</string>
+    </property>
+   </widget>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
  <connections/>
