@@ -13,7 +13,7 @@ INCLUDEPATH += /usr/local/include/opencv4 \
 SOURCES += \
     imageprocessor.cpp \
     main.cpp \
-    mainwindow.cpp \ \
+    mainwindow.cpp \
     transceiver.cpp
 
 HEADERS += \

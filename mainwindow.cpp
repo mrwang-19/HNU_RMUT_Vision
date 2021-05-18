@@ -25,7 +25,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->OriginalImage->setScaledContents(true);
     ui->ProcessedImage->setScaledContents(true);
     pointer_=this;
-//    connect(this,&MainWindow::new_image,this,&MainWindow::update_img,Qt::QueuedConnection);
 }
 
 MainWindow::~MainWindow()
@@ -67,33 +66,23 @@ void GX_STDC MainWindow::OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame)
         //发射信号，传输图片数据
         emit pointer_->newImage(pRGB24Buf,pFrame->nHeight,pFrame->nWidth);
     }
-//    QDateTime dateTime = QDateTime::currentDateTime();
-//    QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
-//    qDebug()<<timestamp;
     return;
 }
 
 void MainWindow::on_OpenButton_clicked()
 {
-    if(open_flag)
-    {
-        //发送停采命令
-        GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_STOP);
-        //关闭相机
-        GXCloseDevice(hDevice);
-        ui->OpenButton->setText("打开");
-        open_flag=false;
-    }
-    else if(hDevice==nullptr)
+    if(hDevice==nullptr)
     {
         GX_OPEN_PARAM stOpenParam;
-        QString SN=ui->SNEdit->text();
-//        QString
-        char *sn = new char[SN.length()];
-        strcpy(sn,SN.toStdString().c_str());
-        //    stOpenParam.openMode = GX_OPEN_SN;
-        ////    stOpenParam.pszContent = sn;
-        //    stOpenParam.pszContent = "KE0210020155";
+        exposureTime=ui->exposureSpinBox->value();
+        width=ui->widthSpinBox->value();
+        height=ui->heightSpinBox->value();
+//        QString SN=ui->SNEdit->text();
+//        char *sn = new char[SN.length()];
+//        strcpy(sn,SN.toStdString().c_str());
+//        //    stOpenParam.openMode = GX_OPEN_SN;
+//        ////    stOpenParam.pszContent = sn;
+//        //    stOpenParam.pszContent = "KE0210020155";
         uint32_t nDeviceNum=0;
         auto status = GXUpdateDeviceList(&nDeviceNum, 1000);
         if (status == GX_STATUS_SUCCESS&&nDeviceNum> 0)
@@ -105,22 +94,38 @@ void MainWindow::on_OpenButton_clicked()
             if(ststus==GX_STATUS_SUCCESS)
             {
                 //初始化相机参数
-                cam_init(hDevice);
+                cam_init();
                 //注册采集回调函数
                 GXRegisterCaptureCallback(hDevice, NULL,OnFrameCallbackFun);
                 //发送开采命令
                 GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_START);
+                //创建处理线程
+                processor=new ImageProcessor(height,width,1000000/exposureTime);
+                processor->moveToThread(&processorHandler);
+                connect(this,&MainWindow::newImage,processor,&ImageProcessor::onNewImage);
+                connect(this,&MainWindow::startRecording,processor,&ImageProcessor::startRecording);
+                connect(this,&MainWindow::stopRecording,processor,&ImageProcessor::stopRecording);
+                connect(&processorHandler,&QThread::finished,processor,&ImageProcessor::deleteLater);
+                processorHandler.start();
+                startTimer(33);
+                ui->OpenButton->setText("关闭");
+    //            open_flag=1;
             }
-//            processor=new ImageProcessor()
-            ui->OpenButton->setText("关闭");
-            open_flag=1;
         }
     }
     else
     {
-        GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_START);
-        ui->OpenButton->setText("关闭");
-        open_flag=1;
+        //发送停采命令
+        GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_STOP);
+        //关闭相机
+        GXCloseDevice(hDevice);
+        //删除相机句柄
+        hDevice=nullptr;
+        //销毁处理线程
+        processorHandler.quit();
+        delete processor;
+        processor=nullptr;
+        ui->OpenButton->setText("打开");
     }
 }
 
@@ -171,34 +176,54 @@ void MainWindow::on_OpenButton_clicked()
 
 void MainWindow::on_RecordButton_clicked()
 {
-
+    if(processor!=nullptr)
+    {
+        if(processor->recordingFlag)
+            emit stopRecording();
+        else
+        {
+            emit startRecording(ui->savePathEdit->text());
+        }
+    }
 }
 
 /**
  * @brief MainWindow::cam_init 初始化相机参数，在开采前调用（但本函数不开始采集）
  * @param hDevice 相机句柄
  */
-bool MainWindow::cam_init(GX_DEV_HANDLE hDevice)
+bool MainWindow::cam_init()
 {
     //自动白平衡
     auto status = GXSetEnum(hDevice,GX_ENUM_BALANCE_WHITE_AUTO,GX_BALANCE_WHITE_AUTO_CONTINUOUS);
     //固定曝光时长
     status &= GXSetEnum(hDevice, GX_ENUM_EXPOSURE_MODE, GX_EXPOSURE_MODE_TIMED);
-    //按照帧率设置曝光时长
-#ifdef _100_FPS
-    status &= GXSetFloat(hDevice, GX_FLOAT_EXPOSURE_TIME, 10000.0000);
-#elif defined (_150_FPS)
-    status &= GXSetFloat(hDevice, GX_FLOAT_EXPOSURE_TIME, 6600.0000);
-#endif
+    //设置曝光时长
+    status &= GXSetFloat(hDevice, GX_FLOAT_EXPOSURE_TIME, exposureTime);
     //设置分辨率
-    status &= GXSetInt(hDevice, GX_INT_WIDTH, WIDTH);
-    status &= GXSetInt(hDevice, GX_INT_HEIGHT, HEIGHT);
+    status &= GXSetInt(hDevice, GX_INT_WIDTH, width);
+    status &= GXSetInt(hDevice, GX_INT_HEIGHT, height);
     //设置偏移量，确保画面中心为相机中心
-    status &= GXSetInt(hDevice, GX_INT_OFFSET_X, (1280-WIDTH)/2);
-    status &= GXSetInt(hDevice, GX_INT_OFFSET_Y, (1024-HEIGHT)/2);
+    status &= GXSetInt(hDevice, GX_INT_OFFSET_X, (1280-width)/2);
+    status &= GXSetInt(hDevice, GX_INT_OFFSET_Y, (1024-height)/2);
     return status;
 }
+/**
+ * @brief MainWindow::timerEvent    定时器处理函数，用于按照固定帧率刷新主界面上显示的图像
+ * @param e
+ */
+void MainWindow::timerEvent(QTimerEvent *e)
+{
 
+//    circle(src,center,20,Scalar(0,255,0),-1);
+//    circle(src,armor,20,Scalar(255,0,0),-1);
+    if(processor!=nullptr)
+    {
+        QImage ori=QImage((const uchar*)processor->orignalImage->data,width,height,QImage::Format_RGB888);
+        QImage prc=QImage((const uchar*)processor->binaryImage->data,width,height,QImage::Format_Indexed8);
+        ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
+        ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
+    }
+}
 
 QImage MainWindow::cvMat2QImage(const cv::Mat& mat)
 {

@@ -35,16 +35,21 @@ signals:
     void startRecording(QString path);
     void stopRecording();
 
+protected:
+    void timerEvent(QTimerEvent *e);
+
 private:
     //变量
     Ui::MainWindow *ui;
     GX_DEV_HANDLE hDevice = nullptr;        //相机句柄
     ImageProcessor * processor = nullptr;   //图像处理线程类
     QThread processorHandler;               //图像处理线程句柄
-    bool open_flag=false;                   //是否已经开采标记
+//    bool open_flag=false;                   //是否已经开采标记
+
+    int width,height,exposureTime;
     //函数
+    bool cam_init();
     static void GX_STDC OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame);
     static QImage cvMat2QImage(const cv::Mat& mat);
-    static bool cam_init(GX_DEV_HANDLE hDevice);
 };
 #endif // MAINWINDOW_H

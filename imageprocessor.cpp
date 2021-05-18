@@ -1,4 +1,5 @@
 #include <QDateTime>
+#include <QTime>
 #include <QDebug>
 #include <vector>
 #include <fstream>
@@ -12,7 +13,8 @@ ImageProcessor::ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate
     width(width),
     frameRate(frameRate)
 {
-
+    orignalImage = new  Mat(height,width,CV_8UC3);
+    binaryImage = new Mat(height,width,CV_8UC1);
 }
 
 /**
@@ -20,18 +22,17 @@ ImageProcessor::ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate
  * @param frame 采集到的原始图像帧
  * @return 预处理后的二值化图像
  */
-Mat ImageProcessor::pretreatment(Mat frame)
+void ImageProcessor::pretreatment(Mat *frame)
 {
-    Mat channels[3],mid,binary;
-    split(frame,channels);
+    Mat channels[3],mid;
+    split(*frame,channels);
     //红通道-蓝通道
     subtract(channels[0],channels[2],mid);
-    threshold(mid,binary,100,255,THRESH_BINARY);
+    threshold(mid,*binaryImage,100,255,THRESH_BINARY);
     Mat element = getStructuringElement(MORPH_ELLIPSE,Point(5,5));
-    dilate(binary,mid,element);
+    dilate(*binaryImage,mid,element);
     Mat kernel = getStructuringElement(MORPH_ELLIPSE,Point(7,7));
-    morphologyEx(mid,binary,MORPH_CLOSE,kernel);
-    return binary;
+    morphologyEx(mid,*binaryImage,MORPH_CLOSE,kernel);
 }
 /**
  * @brief MainWindow::detect 由预处理过的视频识别能量机关的中心和目标装甲板的像素坐标
@@ -40,11 +41,11 @@ Mat ImageProcessor::pretreatment(Mat frame)
  * @param armor 目标装甲板的中心
  * @return 是否检测到目标
  */
-bool ImageProcessor::detectTarget(cv::Mat src,cv::Point2f &center,cv::Point2f &armor)
+bool ImageProcessor::detectTarget(cv::Point2f &center,cv::Point2f &armor)
 {
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
-    findContours(src,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+    findContours(*binaryImage,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
     //    drawContours(fliped,contours,max,Scalar(0,255,0),5);
     //    drawContours(fliped,contours,min,Scalar(255,0,0),5);
 //    int max=0,min=0;
@@ -106,39 +107,22 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width)
     QString timestamp = dateTime.toString("mm:ss.zzz");
     qDebug()<<timestamp;
 
-    static int fream_count=0;
-    auto src = Mat(height,width,CV_8UC3);
+//    static int fream_count=0;
     //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）
     for(int i=0;i<width*height*3;i++)
-        src.data[width*height*3-i-1]=img_data[i];
+        orignalImage->data[width*height*3-i-1]=img_data[i];
 
-    Mat bin=pretreatment(src);
+    pretreatment(orignalImage);
     Point2f center,armor;
-    detectTarget(bin,center,armor);
+    detectTarget(center,armor);
 
     if(recordingFlag)
     {
 //        fream_count++;
-        (*recorder)<<src;
+        (*recorder)<<*orignalImage;
         (*csv_save)<<timestamp.toStdString()<<","<<center.x<<","<<center.y<<","<<armor.x<<","<<armor.y;
-//        if(fream_count%5==0)
-//        {
-//            cvtColor(fliped,src, cv::COLOR_RGB2BGR);
-//            QImage img=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
-//        //    QImage img=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
-//            ui->ImagelLabel->setPixmap(QPixmap::fromImage(img));
-//            fream_count=0;
-//        }
     }
-    else
-    {
-//    circle(src,center,20,Scalar(0,255,0),-1);
-//    circle(src,armor,20,Scalar(255,0,0),-1);
-//    QImage ori=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
-////    QImage prc=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
-//    ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
-//    ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
-    }
+
     //删除帧数据
     delete [] img_data;
 }
