@@ -46,7 +46,7 @@ void ImageProcessor::pretreatment(Mat *frame)
  * @param armor 目标装甲板的中心
  * @return 是否检测到目标
  */
-bool ImageProcessor::detectTarget(cv::Point2f &center,cv::Point2f &armor)
+Target ImageProcessor::detectTarget(QTime timestamp)
 {
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
@@ -54,47 +54,58 @@ bool ImageProcessor::detectTarget(cv::Point2f &center,cv::Point2f &armor)
     //    drawContours(fliped,contours,max,Scalar(0,255,0),5);
     //    drawContours(fliped,contours,min,Scalar(255,0,0),5);
     float max_area=0.0,min_area=10000.0;
+    Target target;
+    target.timestamp=timestamp;
     if(contours.size()<2)
-        return false;
-    for(int i=0;i<(int)contours.size();i++)
     {
-        auto rect=minAreaRect(contours[i]);
-        auto tmp = rect.size.area();
-        qDebug()<<tmp;
-        if(tmp>max_area)
-        {
-            max_area=tmp;
-            armor=rect.center;
-        }
-        if(tmp<min_area)
-        {
-            min_area=tmp;
-            center=rect.center;
-        }
-//        qDebug()<<i<<":"<<rect.size.aspectRatio();
-//        if(abs(rect.size.aspectRatio()-0.6)<0.5)
-//        {
-//            max_1=i;
-//        }
-//        else {
-//            max_2=i;
-//        }
-//        if()
-//        minEnclosingCircle(contours[i],center,radius);
-//        float r=contourArea(contours[i])/(rect.area());
-//        if(r>rate_1)
-//        {
-//            rate_1=r;
-//            max_1=i;
-//        }
-//        r=contourArea(contours[i])/(PI*radius*radius);
-//        if(r>rate_2)
-//        {
-//            rate_1=r;
-//            max_2=i;
-//        }
+        target.hasTarget=false;
     }
-    return true;
+    else
+    {
+        for(int i=0;i<(int)contours.size();i++)
+        {
+            auto rect=minAreaRect(contours[i]);
+            auto tmp = rect.size.area();
+            qDebug()<<tmp;
+            if(tmp>max_area)
+            {
+                max_area=tmp;
+                target.armorRect=rect;
+            }
+            if(tmp<min_area)
+            {
+                min_area=tmp;
+                target.center=rect.center;
+            }
+            /*
+            qDebug()<<i<<":"<<rect.size.aspectRatio();
+            if(abs(rect.size.aspectRatio()-0.6)<0.5)
+            {
+                max_1=i;
+            }
+            else {
+                max_2=i;
+            }
+            if()
+            minEnclosingCircle(contours[i],center,radius);
+            float r=contourArea(contours[i])/(rect.area());
+            if(r>rate_1)
+            {
+                rate_1=r;
+                max_1=i;
+            }
+            r=contourArea(contours[i])/(PI*radius*radius);
+            if(r>rate_2)
+            {
+                rate_1=r;
+                max_2=i;
+            }*/
+        }
+        target.armorCenter=target.armorRect.center;
+    }
+    historyTarget.append(target);
+    qDebug()<<"历史目标数："<<historyTarget.size();
+    return target;
 }
 ///
 /// \brief ImageProcessor::onNewImage
@@ -105,8 +116,8 @@ bool ImageProcessor::detectTarget(cv::Point2f &center,cv::Point2f &armor)
 void ImageProcessor::onNewImage(char* img_data,int height,int width)
 {
     //打印时间戳
-    QDateTime dateTime = QDateTime::currentDateTime();
-    QString timestamp = dateTime.toString("mm:ss.zzz");
+    QTime time = QTime::currentTime();
+    QString timestamp = time.toString("mm:ss.zzz");
     qDebug()<<timestamp;
 
 //    static int fream_count=0;
@@ -116,7 +127,7 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width)
 
     pretreatment(orignalImage);
     Point2f center,armor;
-    detectTarget(center,armor);
+    detectTarget(time);
 
     if(recordingFlag)
     {

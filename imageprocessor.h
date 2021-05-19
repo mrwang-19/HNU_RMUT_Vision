@@ -18,13 +18,13 @@ using namespace cv;
  */
 struct Target
 {
-    int index;          //序号
-    bool hasTarget;     //是否含有有效目标
-    char lightNum;      //已点亮的灯条数
-    Rect2f  armorRect;  //要击打的装甲板的边缘矩形
-    Point2f armor;      //要击打的装甲板的中心像素坐标
-    Point2f center;     //能量机关中心坐标
-    QTime timestamp;    //采集时间戳
+    int index;              //序号
+    bool hasTarget;         //是否含有有效目标
+    char lightNum;          //已点亮的灯条数
+    RotatedRect armorRect;  //要击打的装甲板的边缘矩形
+    Point2f armorCenter;          //要击打的装甲板的中心像素坐标
+    Point2f center;         //能量机关中心坐标
+    QTime timestamp;        //采集时间戳
 };
 
 /**
@@ -42,7 +42,7 @@ public:
     Mat *orignalImage=nullptr;      //原始图片
     Mat *binaryImage=nullptr;       //二值化图片
     QTime t;                        //规则时间
-    static QVector<Target> historyTarget;  //历史目标队列
+    QVector<Target> historyTarget;  //历史目标队列
 
 public slots:
     void startRecording(QString savePath);
@@ -51,7 +51,7 @@ public slots:
 private:
     //函数
     void pretreatment(Mat *frame);
-    bool detectTarget(Point2f &center,Point2f &armor);
+    Target detectTarget(QTime timestamp);
     //变量
     std::ofstream *csv_save=nullptr;    //保存的csv文件
     cv::VideoWriter *recorder =nullptr; //录制视频的句柄
