@@ -100,13 +100,16 @@ void MainWindow::on_OpenButton_clicked()
                 //发送开采命令
                 GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_START);
                 //创建处理线程
-                processor=new ImageProcessor(height,width,1000000/exposureTime);
+                processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value(),this);
                 processor->moveToThread(&processorHandler);
                 connect(this,&MainWindow::newImage,processor,&ImageProcessor::onNewImage);
                 connect(this,&MainWindow::startRecording,processor,&ImageProcessor::startRecording);
                 connect(this,&MainWindow::stopRecording,processor,&ImageProcessor::stopRecording);
                 connect(&processorHandler,&QThread::finished,processor,&ImageProcessor::deleteLater);
                 processorHandler.start();
+                //创建收发线程
+                transceiver=new Transceiver(ui->serialNameEdit->text(),this);
+
                 startTimer(33);
                 ui->OpenButton->setText("关闭");
     //            open_flag=1;
@@ -128,50 +131,6 @@ void MainWindow::on_OpenButton_clicked()
         ui->OpenButton->setText("打开");
     }
 }
-
-//void MainWindow::update_img(char* img_data,int height,int width)
-//{
-//    //打印时间戳
-//    QDateTime dateTime = QDateTime::currentDateTime();
-//    QString timestamp = dateTime.toString("mm:ss.zzz");
-//    qDebug()<<timestamp;
-
-//    static int fream_count=0;
-//    auto src = Mat(height,width,CV_8UC3);
-//    //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）
-//    for(int i=0;i<width*height*3;i++)
-//        src.data[width*height*3-i-1]=img_data[i];
-
-////    Mat bin=pretreatment(src);
-//    Point2f center,armor;
-////    detect(bin,center,armor);
-
-//    if(recording_flag)
-//    {
-////        fream_count++;
-//        (*rec)<<src;
-//        (*csv_save)<<timestamp.toStdString()<<","<<center.x<<","<<center.y<<","<<armor.x<<","<<armor.y;
-////        if(fream_count%5==0)
-////        {
-////            cvtColor(fliped,src, cv::COLOR_RGB2BGR);
-////            QImage img=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
-////        //    QImage img=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
-////            ui->ImagelLabel->setPixmap(QPixmap::fromImage(img));
-////            fream_count=0;
-////        }
-//    }
-//    else
-//    {
-//    circle(src,center,20,Scalar(0,255,0),-1);
-//    circle(src,armor,20,Scalar(255,0,0),-1);
-//    QImage ori=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
-////    QImage prc=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
-//    ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
-//    ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
-//    }
-//    //删除帧数据
-//    delete [] img_data;
-//}
 
 
 void MainWindow::on_RecordButton_clicked()

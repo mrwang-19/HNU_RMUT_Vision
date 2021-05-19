@@ -1,5 +1,4 @@
-QT       += core gui
-
+QT       += core gui serialport
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
@@ -14,6 +13,7 @@ SOURCES += \
     imageprocessor.cpp \
     main.cpp \
     mainwindow.cpp \
+    pid.cpp \
     transceiver.cpp
 
 HEADERS += \
@@ -21,6 +21,7 @@ HEADERS += \
     Daheng_inc/GxIAPI.h \
     imageprocessor.h \
     mainwindow.h \
+    pid.h \
     transceiver.h
 
 FORMS += \

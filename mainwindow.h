@@ -12,6 +12,7 @@
 #include "Daheng_inc/GxIAPI.h"
 
 #include "imageprocessor.h"
+#include "transceiver.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -44,7 +45,9 @@ private:
     GX_DEV_HANDLE hDevice = nullptr;        //相机句柄
     ImageProcessor * processor = nullptr;   //图像处理线程类
     QThread processorHandler;               //图像处理线程句柄
-//    bool open_flag=false;                   //是否已经开采标记
+    Transceiver * transceiver = nullptr;    //串口收发线程
+    QThread transceiverHandler;             //串口收发线程句柄
+//    bool open_flag=false;                 //是否已经开采标记
 
     int width,height,exposureTime;
     //函数

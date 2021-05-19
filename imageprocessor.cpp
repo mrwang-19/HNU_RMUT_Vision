@@ -1,5 +1,4 @@
 #include <QDateTime>
-#include <QTime>
 #include <QDebug>
 #include <vector>
 #include <fstream>
@@ -7,11 +6,12 @@
 #include "imageprocessor.h"
 using namespace cv;
 using namespace std;
-ImageProcessor::ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate,QObject *parent) :
+ImageProcessor::ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate,double blueDecay,QObject *parent) :
     QObject(parent=nullptr),
     height(height),
     width(width),
-    frameRate(frameRate)
+    frameRate(frameRate),
+    blueDecay(blueDecay)
 {
     orignalImage = new  Mat(height,width,CV_8UC3);
     binaryImage = new Mat(height,width,CV_8UC1);
@@ -26,6 +26,11 @@ void ImageProcessor::pretreatment(Mat *frame)
 {
     Mat channels[3],mid;
     split(*frame,channels);
+    //衰减蓝色通道
+    for(int i=0;i<width*height;i++)
+    {
+        channels[2].data[i]*=(1-blueDecay);
+    }
     //红通道-蓝通道
     subtract(channels[0],channels[2],mid);
     threshold(mid,*binaryImage,100,255,THRESH_BINARY);
@@ -48,7 +53,6 @@ bool ImageProcessor::detectTarget(cv::Point2f &center,cv::Point2f &armor)
     findContours(*binaryImage,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
     //    drawContours(fliped,contours,max,Scalar(0,255,0),5);
     //    drawContours(fliped,contours,min,Scalar(255,0,0),5);
-//    int max=0,min=0;
     float max_area=0.0,min_area=10000.0;
     if(contours.size()<2)
         return false;
@@ -60,13 +64,11 @@ bool ImageProcessor::detectTarget(cv::Point2f &center,cv::Point2f &armor)
         if(tmp>max_area)
         {
             max_area=tmp;
-//            max=i;
             armor=rect.center;
         }
         if(tmp<min_area)
         {
             min_area=tmp;
-//            min=i;
             center=rect.center;
         }
 //        qDebug()<<i<<":"<<rect.size.aspectRatio();

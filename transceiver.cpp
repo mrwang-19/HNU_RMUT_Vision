@@ -1,6 +1,8 @@
 #include "transceiver.h"
+#include <QDebug>
 
-Transceiver::Transceiver(QObject *parent) : QObject(parent)
-{
-
+Transceiver::Transceiver(QString portName, QObject *parent) : QObject(parent)
+{    
+    serial=new QSerialPort(portName);
+    serial->setStopBits(QSerialPort::OneStop);
 }
