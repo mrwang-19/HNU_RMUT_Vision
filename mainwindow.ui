@@ -282,6 +282,48 @@
      </item>
     </layout>
    </widget>
+   <widget class="QLabel" name="angleLable">
+    <property name="geometry">
+     <rect>
+      <x>390</x>
+      <y>10</y>
+      <width>191</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>目标角度：</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="pitchAngleLable">
+    <property name="geometry">
+     <rect>
+      <x>650</x>
+      <y>480</y>
+      <width>151</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>pitch轴角度：</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="yawAngleLable">
+    <property name="geometry">
+     <rect>
+      <x>650</x>
+      <y>510</y>
+      <width>151</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>yaw轴角度：</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <resources/>

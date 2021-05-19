@@ -89,7 +89,8 @@ void MainWindow::on_OpenButton_clicked()
         {
             stOpenParam.accessMode = GX_ACCESS_EXCLUSIVE;
             stOpenParam.openMode = GX_OPEN_INDEX;
-            stOpenParam.pszContent = "1";
+            const char * tmp="1";
+            stOpenParam.pszContent = (char*)tmp;
             auto ststus=GXOpenDevice(&stOpenParam, &hDevice);
             if(ststus==GX_STATUS_SUCCESS)
             {
@@ -170,17 +171,26 @@ bool MainWindow::cam_init()
  * @brief MainWindow::timerEvent    定时器处理函数，用于按照固定帧率刷新主界面上显示的图像
  * @param e
  */
-void MainWindow::timerEvent(QTimerEvent *e)
+void MainWindow::timerEvent(QTimerEvent*)
 {
-
-//    circle(src,center,20,Scalar(0,255,0),-1);
-//    circle(src,armor,20,Scalar(255,0,0),-1);
     if(processor!=nullptr)
     {
-        QImage ori=QImage((const uchar*)processor->orignalImage->data,width,height,QImage::Format_RGB888);
+        Target tmp=processor->historyTarget.last();
+        Mat img=(*processor->orignalImage);
+        circle(img,tmp.center,15,Scalar(0,255,0),-1);
+        circle(img,tmp.armorCenter,15,Scalar(255,0,0),-1);
+        QImage ori=QImage((const uchar*)img.data,width,height,QImage::Format_RGB888);
         QImage prc=QImage((const uchar*)processor->binaryImage->data,width,height,QImage::Format_Indexed8);
         ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
         ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
+        if(tmp.hasTarget)
+        {
+            ui->angleLable->setText(tr("目标角度：%1").arg(tmp.armorAngle));
+        }
+    }
+    if(transceiver!=nullptr)
+    {
+        ui->pitchAngleLable->setText(tr("pitch轴角度：%1").arg(transceiver->recvFrame.pitchAngleGet));
     }
 }
 

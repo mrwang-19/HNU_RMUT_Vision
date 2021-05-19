@@ -2,10 +2,13 @@
 #include <QDebug>
 #include <vector>
 #include <fstream>
+#include <cmath>
 
 #include "imageprocessor.h"
+
 using namespace cv;
 using namespace std;
+
 ImageProcessor::ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate,double blueDecay,QObject *parent) :
     QObject(parent=nullptr),
     height(height),
@@ -102,9 +105,12 @@ Target ImageProcessor::detectTarget(QTime timestamp)
             }*/
         }
         target.armorCenter=target.armorRect.center;
+        target.armorAngle=atan2f(target.armorCenter.y-target.center.y,target.armorCenter.x-target.center.x);
     }
     historyTarget.append(target);
-    qDebug()<<"历史目标数："<<historyTarget.size();
+    if(historyTarget.size()>500)
+        historyTarget.pop_front();//移除最早的数据
+//    qDebug()<<"历史目标数："<<historyTarget.size();
     return target;
 }
 ///
