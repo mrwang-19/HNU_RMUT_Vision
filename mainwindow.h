@@ -31,6 +31,8 @@ private slots:
     void on_OpenButton_clicked();
     void on_RecordButton_clicked();
 
+    void on_blueDecaySpinBox_valueChanged(double arg1);
+
 signals:
     void newImage(char* img_data,int height,int width);
     void startRecording(QString path);
@@ -47,7 +49,7 @@ private:
     QThread processorHandler;               //图像处理线程句柄
     Transceiver * transceiver = nullptr;    //串口收发线程
     QThread transceiverHandler;             //串口收发线程句柄
-//    bool open_flag=false;                 //是否已经开采标记
+    int timerID;                            //定时器ID
 
     int width,height,exposureTime;
     //函数

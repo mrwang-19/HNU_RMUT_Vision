@@ -105,9 +105,10 @@ Target ImageProcessor::detectTarget(QTime timestamp)
             }*/
         }
         target.armorCenter=target.armorRect.center;
-        target.armorAngle=atan2f(target.armorCenter.y-target.center.y,target.armorCenter.x-target.center.x);
+        target.armorAngle=57.29578*atan2f(target.armorCenter.y-target.center.y,target.armorCenter.x-target.center.x);//弧度转换成角度
     }
     historyTarget.append(target);
+    //TO—DO 确定历史长度
     if(historyTarget.size()>500)
         historyTarget.pop_front();//移除最早的数据
 //    qDebug()<<"历史目标数："<<historyTarget.size();

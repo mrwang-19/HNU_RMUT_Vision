@@ -129,6 +129,11 @@ void MainWindow::on_OpenButton_clicked()
         processorHandler.quit();
         delete processor;
         processor=nullptr;
+        //销毁收发线程
+        transceiverHandler.quit();
+        delete transceiver;
+        transceiver=nullptr;
+        //改变按钮文本
         ui->OpenButton->setText("打开");
     }
 }
@@ -139,9 +144,13 @@ void MainWindow::on_RecordButton_clicked()
     if(processor!=nullptr)
     {
         if(processor->recordingFlag)
+        {
+            ui->RecordButton->setText("停止录制");
             emit stopRecording();
+        }
         else
         {
+            ui->RecordButton->setText("开始录制");
             emit startRecording(ui->savePathEdit->text());
         }
     }
@@ -185,7 +194,9 @@ void MainWindow::timerEvent(QTimerEvent*)
         ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
         if(tmp.hasTarget)
         {
-            ui->angleLable->setText(tr("目标角度：%1").arg(tmp.armorAngle));
+            ui->angleLable->setNum(tmp.armorAngle);
+            ui->centerLable->setText(QString("(%1,%2)").arg(tmp.center.x,tmp.center.y));
+            ui->armorLable->setText(QString("(%1,%2)").arg(tmp.armorCenter.x,tmp.armorCenter.y));
         }
     }
     if(transceiver!=nullptr)
@@ -239,4 +250,10 @@ QImage MainWindow::cvMat2QImage(const cv::Mat& mat)
         qDebug() << "ERROR: Mat could not be converted to QImage.";
         return QImage();
     }
+}
+
+void MainWindow::on_blueDecaySpinBox_valueChanged(double arg1)
+{
+    if(processor!=nullptr)
+        processor->blueDecay=arg1;
 }

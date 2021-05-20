@@ -8,18 +8,19 @@ Transceiver::Transceiver(QString portName, QObject *parent) : QObject(parent)
     serial=new QSerialPort(portName,this);
     serial->setStopBits(QSerialPort::OneStop);
     serial->setBaudRate(QSerialPort::Baud115200);
+    serial->setReadBufferSize(sizeof(RecvFrame));
     connect(serial,&QSerialPort::readyRead,this,&Transceiver::receiveData);
     serial->open(QIODevice::ReadWrite);
     startTimer(20);
 }
-void Transceiver::timerEvent(QTimerEvent *e)
+void Transceiver::timerEvent(QTimerEvent *)
 {
     serial->write((char*)&sendFrame,sizeof (SendFrame));
 }
 
 void Transceiver::receiveData()
 {
-    if(serial->bytesAvailable()>(qint64)sizeof (RecvFrame))
+    if(serial->bytesAvailable()>=(qint64)sizeof (RecvFrame))
     {
         serial->read((char*)&recvFrame,(qint64)sizeof (RecvFrame));
     }
