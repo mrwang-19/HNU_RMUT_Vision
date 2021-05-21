@@ -32,12 +32,6 @@ public:
     explicit Transceiver(QString portName, QObject *parent = nullptr);
     SendFrame sendFrame;
     RecvFrame recvFrame;
-//    float pitchAngleSet,yawAngleSet;
-//    float pitchAngleGet,yawAngleGet;
-//    bool shootCommand;
-//    bool rotateDricetion;
-//    float timeBais;         //预测时间偏置
-//    float compensateBais;   //弹道补偿偏执
 
 signals:
 

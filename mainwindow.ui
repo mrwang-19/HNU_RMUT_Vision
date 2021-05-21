@@ -392,6 +392,32 @@
      </item>
     </layout>
    </widget>
+   <widget class="QCheckBox" name="checkBoxFollowCenter">
+    <property name="geometry">
+     <rect>
+      <x>710</x>
+      <y>330</y>
+      <width>141</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>跟随能量机关中心</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBoxFollowArmor">
+    <property name="geometry">
+     <rect>
+      <x>860</x>
+      <y>330</y>
+      <width>131</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>跟随目标装甲板</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <resources/>

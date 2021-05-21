@@ -257,3 +257,15 @@ void MainWindow::on_blueDecaySpinBox_valueChanged(double arg1)
     if(processor!=nullptr)
         processor->blueDecay=arg1;
 }
+
+void MainWindow::on_checkBoxFollowCenter_stateChanged(int)
+{
+    if(ui->checkBoxFollowArmor->isChecked())
+        ui->checkBoxFollowArmor->setCheckState(Qt::Unchecked);
+}
+
+void MainWindow::on_checkBoxFollowArmor_stateChanged(int arg1)
+{
+    if(ui->checkBoxFollowCenter->isChecked())
+        ui->checkBoxFollowCenter->setCheckState(Qt::Unchecked);
+}

@@ -13,8 +13,8 @@
 
 #include "imageprocessor.h"
 #include "transceiver.h"
+#include "pid.h"
 
-QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
@@ -33,6 +33,10 @@ private slots:
 
     void on_blueDecaySpinBox_valueChanged(double arg1);
 
+    void on_checkBoxFollowCenter_stateChanged(int arg1);
+
+    void on_checkBoxFollowArmor_stateChanged(int arg1);
+
 signals:
     void newImage(char* img_data,int height,int width);
     void startRecording(QString path);
@@ -49,6 +53,7 @@ private:
     QThread processorHandler;               //图像处理线程句柄
     Transceiver * transceiver = nullptr;    //串口收发线程
     QThread transceiverHandler;             //串口收发线程句柄
+    pid pid_yaw=pid(1.0,0.1,0),pid_pich=pid(1.0,0.1,0);
     int timerID;                            //定时器ID
 
     int width,height,exposureTime;
