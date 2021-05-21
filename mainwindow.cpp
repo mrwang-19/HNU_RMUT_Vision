@@ -111,7 +111,7 @@ void MainWindow::on_OpenButton_clicked()
                 //创建收发线程
                 transceiver=new Transceiver(ui->serialNameEdit->text(),this);
 
-                startTimer(33);
+                timerID=startTimer(33);
                 ui->OpenButton->setText("关闭");
     //            open_flag=1;
             }
@@ -119,6 +119,7 @@ void MainWindow::on_OpenButton_clicked()
     }
     else
     {
+        killTimer(timerID);
         //发送停采命令
         GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_STOP);
         //关闭相机
@@ -195,13 +196,14 @@ void MainWindow::timerEvent(QTimerEvent*)
         if(tmp.hasTarget)
         {
             ui->angleLable->setNum(tmp.armorAngle);
-            ui->centerLable->setText(QString("(%1,%2)").arg(tmp.center.x,tmp.center.y));
-            ui->armorLable->setText(QString("(%1,%2)").arg(tmp.armorCenter.x,tmp.armorCenter.y));
+            ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
+            ui->armorLable->setText(QString::number(tmp.armorCenter.x,'f',4)+","+QString::number(tmp.armorCenter.y,'f',4));
         }
     }
     if(transceiver!=nullptr)
     {
-        ui->pitchAngleLable->setText(tr("pitch轴角度：%1").arg(transceiver->recvFrame.pitchAngleGet));
+        ui->pitchAngleLable->setText(tr("%1").arg(transceiver->recvFrame.pitchAngleGet));
+        ui->yawAngleLable->setText(tr("%1").arg(transceiver->recvFrame.yawAngleGet));
     }
 }
 

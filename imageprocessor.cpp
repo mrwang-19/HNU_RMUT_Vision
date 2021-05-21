@@ -125,7 +125,7 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width)
     //打印时间戳
     QTime time = QTime::currentTime();
     QString timestamp = time.toString("mm:ss.zzz");
-    qDebug()<<timestamp;
+//    qDebug()<<timestamp;
 
 //    static int fream_count=0;
     //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）

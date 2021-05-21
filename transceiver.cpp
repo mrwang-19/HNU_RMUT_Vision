@@ -23,6 +23,8 @@ void Transceiver::receiveData()
     if(serial->bytesAvailable()>=(qint64)sizeof (RecvFrame))
     {
         serial->read((char*)&recvFrame,(qint64)sizeof (RecvFrame));
+        serial->clear(QSerialPort::Input);
+//        qDebug()<<recvFrame.head;
     }
     if(recvFrame.head!=0xbbbb)
         memset(&recvFrame,0,sizeof (RecvFrame));
