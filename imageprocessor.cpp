@@ -61,6 +61,7 @@ Target ImageProcessor::detectTarget(QTime timestamp)
     target.timestamp=timestamp;
     if(contours.size()<2)
     {
+        target.center=Point2f(width/2,height/2);
         target.hasTarget=false;
     }
     else
@@ -69,7 +70,7 @@ Target ImageProcessor::detectTarget(QTime timestamp)
         {
             auto rect=minAreaRect(contours[i]);
             auto tmp = rect.size.area();
-            qDebug()<<tmp;
+//            qDebug()<<tmp;
             if(tmp>max_area)
             {
                 max_area=tmp;

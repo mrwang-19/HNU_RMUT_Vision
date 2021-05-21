@@ -3,8 +3,8 @@
 
 Transceiver::Transceiver(QString portName, QObject *parent) : QObject(parent)
 {    
-    memset(&recvFrame,0,sizeof (RecvFrame));
-    memset(&sendFrame,0,sizeof (RecvFrame));
+//    memset(&recvFrame,0,sizeof (RecvFrame));
+//    memset(&sendFrame,0,sizeof (SendFrame));
     serial=new QSerialPort(portName,this);
     serial->setStopBits(QSerialPort::OneStop);
     serial->setBaudRate(QSerialPort::Baud115200);
@@ -15,7 +15,9 @@ Transceiver::Transceiver(QString portName, QObject *parent) : QObject(parent)
 }
 void Transceiver::timerEvent(QTimerEvent *)
 {
+    qDebug()<<sendFrame.pitchAngleSet<<","<<sendFrame.yawAngleSet;
     serial->write((char*)&sendFrame,sizeof (SendFrame));
+    serial->flush();
 }
 
 void Transceiver::receiveData()
@@ -24,8 +26,12 @@ void Transceiver::receiveData()
     {
         serial->read((char*)&recvFrame,(qint64)sizeof (RecvFrame));
         serial->clear(QSerialPort::Input);
-//        qDebug()<<recvFrame.head;
     }
     if(recvFrame.head!=0xbbbb)
         memset(&recvFrame,0,sizeof (RecvFrame));
+}
+Transceiver::~Transceiver()
+{
+    if(serial!=nullptr)
+        serial->close();
 }

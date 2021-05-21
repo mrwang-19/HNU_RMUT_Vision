@@ -8,10 +8,10 @@
 struct __attribute__((packed)) SendFrame
 {
     uint16_t head=0xaaaa;   //帧头
-    float pitchAngleSet;    //pitch轴角度设定值
-    float yawAngleSet;      //yaw轴角度设定值
-    float targetAngle;      //目标装甲板角度
-    uint8_t shootCommand;   //发射指令
+    float pitchAngleSet=0.0f;    //pitch轴角度设定值
+    float yawAngleSet=0.0f;      //yaw轴角度设定值
+    float targetAngle=0.0f;      //目标装甲板角度
+    uint8_t shootCommand=0;   //发射指令
 };
 
 struct __attribute__((packed)) RecvFrame
@@ -30,6 +30,7 @@ class Transceiver : public QObject
     Q_OBJECT
 public:
     explicit Transceiver(QString portName, QObject *parent = nullptr);
+    ~Transceiver();
     SendFrame sendFrame;
     RecvFrame recvFrame;
 

@@ -183,7 +183,7 @@ bool MainWindow::cam_init()
  */
 void MainWindow::timerEvent(QTimerEvent*)
 {
-    if(processor!=nullptr)
+    if(processor!=nullptr && transceiver!=nullptr)
     {
         Target tmp=processor->historyTarget.last();
         Mat img=(*processor->orignalImage);
@@ -199,11 +199,23 @@ void MainWindow::timerEvent(QTimerEvent*)
             ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
             ui->armorLable->setText(QString::number(tmp.armorCenter.x,'f',4)+","+QString::number(tmp.armorCenter.y,'f',4));
         }
-    }
-    if(transceiver!=nullptr)
-    {
         ui->pitchAngleLable->setText(tr("%1").arg(transceiver->recvFrame.pitchAngleGet));
         ui->yawAngleLable->setText(tr("%1").arg(transceiver->recvFrame.yawAngleGet));
+        if(ui->checkBoxFollowCenter->isChecked())
+        {
+            transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.center.x,width/2);
+            transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.center.y,height/2);
+        }
+        else if(ui->checkBoxFollowArmor->isChecked())
+        {
+            transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.armorCenter.x,width/2);
+            transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.armorCenter.y,height/2);
+        }
+        else
+        {
+            transceiver->sendFrame.yawAngleSet=0;
+            transceiver->sendFrame.pitchAngleSet=0;
+        }
     }
 }
 
