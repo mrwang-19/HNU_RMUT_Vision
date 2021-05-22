@@ -278,8 +278,38 @@ void MainWindow::on_checkBoxFollowCenter_stateChanged(int)
         ui->checkBoxFollowArmor->setCheckState(Qt::Unchecked);
 }
 
-void MainWindow::on_checkBoxFollowArmor_stateChanged(int arg1)
+void MainWindow::on_checkBoxFollowArmor_stateChanged(int)
 {
     if(ui->checkBoxFollowCenter->isChecked())
         ui->checkBoxFollowCenter->setCheckState(Qt::Unchecked);
+}
+
+void MainWindow::on_yawKpSpinBox_valueChanged(double arg1)
+{
+    pid_yaw.kp=arg1;
+}
+
+void MainWindow::on_yawKiSpinBox_valueChanged(double arg1)
+{
+    pid_yaw.ki=arg1;
+}
+
+void MainWindow::on_yawKdSpinBox_valueChanged(double arg1)
+{
+    pid_yaw.kd=arg1;
+}
+
+void MainWindow::on_pitKpSpinBox_valueChanged(double arg1)
+{
+    pid_pit.kp=arg1;
+}
+
+void MainWindow::on_pPitkiSpinBox_valueChanged(double arg1)
+{
+    pid_pit.ki=arg1;
+}
+
+void MainWindow::on_pitKdSpinBox_valueChanged(double arg1)
+{
+    pid_pit.kd=arg1;
 }
