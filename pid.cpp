@@ -15,6 +15,7 @@ float pid::pid_calc(float get, float set)
 //    abs_limit(&(iout), integral_limit);
     out = pout + iout + dout;
 //    qDebug()<<out;
+    abs_limit(&(iout), 20);
     abs_limit(&(out), max_output);
 
     err[LAST]  = err[NOW];
