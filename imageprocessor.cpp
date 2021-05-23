@@ -88,7 +88,7 @@ Target ImageProcessor::detectTarget(uint64_t timestamp)
         {
             auto rect=minAreaRect(contours[i]);
             auto tmp = rect.size.area();
-            qDebug()<<tmp;
+//            qDebug()<<tmp;
             if(tmp>max_area)
             {
                 max_area=tmp;

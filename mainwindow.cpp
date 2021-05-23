@@ -147,6 +147,8 @@ void MainWindow::on_OpenButton_clicked()
         transceiverHandler.quit();
         delete transceiver;
         transceiver=nullptr;
+        //销毁绘图线程
+        chartPainterHandler.quit();
         //改变按钮文本
         ui->OpenButton->setText("打开");
     }

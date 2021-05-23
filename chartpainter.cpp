@@ -39,7 +39,10 @@ ChartPainter::ChartPainter(QWidget *parent) : QChartView(parent)
 
 void ChartPainter::onTarget(Target target)
 {
-    chart->axisX()->setMin(QDateTime::currentDateTime().addSecs(-60 * 1));       //系统当前时间的前一秒
-    chart->axisX()->setMax(QDateTime::currentDateTime().addSecs(0));
-    series->append(target.timestamp, target.angleDifference);
+    if(target.hasTarget)
+    {
+        chart->axisX()->setMin(QDateTime::currentDateTime().addSecs(-60 * 1));       //系统当前时间的前一秒
+        chart->axisX()->setMax(QDateTime::currentDateTime().addSecs(0));
+        series->append(target.timestamp, target.angleDifference);
+    }
 }
