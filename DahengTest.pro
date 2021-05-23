@@ -16,6 +16,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     pid.cpp \
+    qcustomplot/qcustomplot.cpp \
     transceiver.cpp
 
 HEADERS += \
@@ -25,6 +26,7 @@ HEADERS += \
     imageprocessor.h \
     mainwindow.h \
     pid.h \
+    qcustomplot/qcustomplot.h \
     transceiver.h
 
 FORMS += \

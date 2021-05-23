@@ -1,48 +1,54 @@
 #include <QDateTime>
 #include "chartpainter.h"
 
-ChartPainter::ChartPainter(QWidget *parent) : QChartView(parent)
-{
-    QPen penY(Qt::darkBlue,3,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin);
-    chart = new QChart();
-    series = new QSplineSeries;
-    axisX = new QDateTimeAxis();
-    axisY = new QValueAxis();
+ChartPainter::ChartPainter(QWidget *parent) : QCustomPlot(parent)
+{    
+    // include this section to fully disable antialiasing for higher performance:
+    /*
+    setNotAntialiasedElements(QCP::aeAll);
+    QFont font;
+    font.setStyleStrategy(QFont::NoAntialias);
+    xAxis->setTickLabelFont(font);
+    yAxis->setTickLabelFont(font);
+    legend->setFont(font);
+    */
+    addGraph(); // blue line
+    graph(0)->setPen(QPen(QColor(40, 110, 255)));
+    addGraph(); // red line
+    graph(1)->setPen(QPen(QColor(255, 110, 40)));
 
-    chart->legend()->hide();                             //隐藏图例
-    chart->addSeries(series);                            //把线添加到chart
-    axisX->setTickCount(10);                             //设置坐标轴格数
-    axisY->setTickCount(6);
-    axisX->setFormat("ss");                        //设置时间显示格式
-    axisY->setMin(0);                                    //设置Y轴范围
-    axisY->setMax(180);
-    axisX->setTitleText("实时时间");                       //设置X轴名称
-    axisY->setLinePenColor(QColor(Qt::darkBlue));        //设置坐标轴颜色样式
-    axisY->setGridLineColor(QColor(Qt::darkBlue));
-    axisY->setGridLineVisible(false);                    //设置Y轴网格不显示
-    axisY->setLinePen(penY);
-    axisX->setLinePen(penY);
+    QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
+    timeTicker->setTimeFormat("%h:%m:%s");
+    xAxis->setTicker(timeTicker);
+    axisRect()->setupFullAxesBox();
+    yAxis->setRange(-1.2, 1.2);
 
-    chart->addAxis(axisX,Qt::AlignBottom);               //设置坐标轴位于chart中的位置
-    chart->addAxis(axisY,Qt::AlignLeft);
-    chart->setBackgroundVisible(false);
-
-    series->attachAxis(axisX);                           //把数据添加到坐标轴上
-    series->attachAxis(axisY);
-
-    axisY->setTitleText("角度差");
-
-    //把chart显示到窗口上
-    setChart(chart);
-    setRenderHint(QPainter::Antialiasing);   //设置抗锯齿
+    // make left and bottom axes transfer their ranges to right and top axes:
+    connect(xAxis, SIGNAL(rangeChanged(QCPRange)), xAxis2, SLOT(setRange(QCPRange)));
+    connect(yAxis, SIGNAL(rangeChanged(QCPRange)), yAxis2, SLOT(setRange(QCPRange)));
 }
 
 void ChartPainter::onTarget(Target target)
 {
     if(target.hasTarget)
     {
-        chart->axisX()->setMin(QDateTime::currentDateTime().addSecs(-60 * 1));       //系统当前时间的前一秒
-        chart->axisX()->setMax(QDateTime::currentDateTime().addSecs(0));
-        series->append(target.timestamp, target.angleDifference);
+        static QTime timeStart = QTime::currentTime();
+        // calculate two new data points:
+        double key = timeStart.msecsTo(QTime::currentTime())/1000.0; // time elapsed since start of demo, in seconds
+        static double lastPointKey = 0;
+        if (key-lastPointKey > 0.002) // at most add point every 2 ms
+        {
+          // add data to lines:
+          graph(0)->addData(key, target.armorAngle);
+          graph(1)->addData(key, target.angleDifference);
+          // rescale value (vertical) axis to fit the current data:
+          graph(0)->rescaleValueAxis();
+          graph(1)->rescaleValueAxis(true);
+          lastPointKey = key;
+        }
+        // make key axis range scroll with the data (at a constant range size of 8):
+        xAxis->setRange(key, 8, Qt::AlignRight);
+        replot();
+
     }
 }

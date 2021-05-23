@@ -2,16 +2,11 @@
 #define CHARTPAINTER_H
 
 #include <QObject>
-#include <QtCharts/QChartView>
-#include <QtCharts/QSplineSeries>
-#include <QDateTimeAxis>
-#include <QValueAxis>
+#include "qcustomplot/qcustomplot.h"
 
 #include "imageprocessor.h"
 
-QT_CHARTS_USE_NAMESPACE   //使用QChart必须要添加这句
-
-class ChartPainter : public QChartView
+class ChartPainter : public QCustomPlot
 {
     Q_OBJECT
 public:
@@ -19,10 +14,7 @@ public:
 public slots:
     void onTarget(Target target);
 private:
-    QChart *chart;                           //画布
-    QSplineSeries *series;                     //线
-    QDateTimeAxis *axisX;                    //轴
-    QValueAxis *axisY;
+
 
 signals:
 

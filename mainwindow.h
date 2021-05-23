@@ -3,10 +3,6 @@
 
 #include <QMainWindow>
 #include <QThread>
-#include <QtCharts/QChartView>
-#include <QtCharts/QSplineSeries>
-#include <QDateTimeAxis>
-#include <QValueAxis>
 
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -19,8 +15,6 @@
 #include "transceiver.h"
 #include "chartpainter.h"
 #include "pid.h"
-
-QT_CHARTS_USE_NAMESPACE   //使用QChart必须要添加这句
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -80,14 +74,9 @@ private:
     int timerID;                            //定时器ID
     int width,height,exposureTime;
 
-//    QChart *chart;                           //画布
-//    QSplineSeries *series;                     //线
-//    QDateTimeAxis *axisX;                    //轴
-//    QValueAxis *axisY;
 
     //函数
     bool cam_init();    //初始化相机参数
-//    void initDraw();    //初始化曲线图
     static void GX_STDC OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame);
     static QImage cvMat2QImage(const cv::Mat& mat);
 };
