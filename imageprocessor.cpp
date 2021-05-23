@@ -18,6 +18,7 @@ ImageProcessor::ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate
     frameRate(frameRate),
     blueDecay(blueDecay)
 {
+    qRegisterMetaType<Target>("Target");
     orignalImage = new  Mat(height,width,CV_8UC3);
     binaryImage = new Mat(height,width,CV_8UC1);
 }
@@ -168,6 +169,7 @@ Target ImageProcessor::detectTarget(uint64_t timestamp)
             }
         }
     }
+    emit new
     historyTarget.append(target);
     //TO—DO 确定历史长度
     if(historyTarget.size()>500)
@@ -187,7 +189,7 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width)
     QDateTime dateTime = QDateTime::currentDateTime();
     // 字符串格式化
     QString timestamp = dateTime.toString("hh:mm:ss.zzz");
-    qDebug()<<timestamp;
+//    qDebug()<<timestamp;
     uint64_t mills_timestamp=dateTime.toMSecsSinceEpoch();
     //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）
     for(int i=0;i<width*height*3;i++)

@@ -11,6 +11,7 @@ INCLUDEPATH += /usr/local/include/opencv4 \
                /usr/include/eigen3/
 
 SOURCES += \
+    chartpainter.cpp \
     imageprocessor.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -20,6 +21,7 @@ SOURCES += \
 HEADERS += \
     Daheng_inc/DxImageProc.h \
     Daheng_inc/GxIAPI.h \
+    chartpainter.h \
     imageprocessor.h \
     mainwindow.h \
     pid.h \

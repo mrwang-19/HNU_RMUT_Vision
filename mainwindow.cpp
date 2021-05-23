@@ -188,6 +188,11 @@ bool MainWindow::cam_init()
  */
 void MainWindow::timerEvent(QTimerEvent*)
 {
+    //打印时间戳
+    QDateTime dateTime = QDateTime::currentDateTime();
+    // 字符串格式化
+    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
+    qDebug()<<"main:"<<timestamp;
     if(processor!=nullptr && transceiver!=nullptr)
     {
         if(processor->historyTarget.size()>0)
@@ -205,9 +210,9 @@ void MainWindow::timerEvent(QTimerEvent*)
                 ui->angleLable->setNum(tmp.armorAngle);
                 ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
                 ui->armorLable->setText(QString::number(tmp.armorCenter.x,'f',4)+","+QString::number(tmp.armorCenter.y,'f',4));
-                chart->axisX()->setMin(QDateTime::currentDateTime().addSecs(-60 * 1));       //系统当前时间的前一秒
-                chart->axisX()->setMax(QDateTime::currentDateTime().addSecs(0));
-                series->append(tmp.timestamp, tmp.angleDifference);
+//                chart->axisX()->setMin(QDateTime::currentDateTime().addSecs(-60 * 1));       //系统当前时间的前一秒
+//                chart->axisX()->setMax(QDateTime::currentDateTime().addSecs(0));
+//                series->append(tmp.timestamp, tmp.angleDifference);
             }
             ui->pitchAngleLable->setText(tr("%1").arg(transceiver->recvFrame.pitchAngleGet));
             ui->yawAngleLable->setText(tr("%1").arg(transceiver->recvFrame.yawAngleGet));

@@ -4,14 +4,15 @@
 #include <QObject>
 #include <QThread>
 #include <QString>
-//#include <QTime>
+#include <QMetaType>
 #include <QVector>
+
 #include <string>
-#include <ctime>
+
+
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui.hpp"
-
 using namespace cv;
 using namespace std;
 
@@ -32,6 +33,7 @@ struct Target
     uint64_t timestamp;            //采集时间戳
     String toString();
 };
+Q_DECLARE_METATYPE(Target)
 
 /**
  * @brief The ImageProcessor class 图像处理及记录结果
@@ -66,7 +68,7 @@ private:
     cv::VideoWriter *recorder =nullptr; //录制视频的句柄
 
 signals:
-
+    void newTarget(Target target);
 };
 
 
