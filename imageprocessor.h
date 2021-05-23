@@ -29,7 +29,7 @@ struct Target
     float armorAngle=0;           //锤子角度(单位：deg)
     float angleDifference=0;      //间隔tao帧的角度差(单位：deg)
     Point2f center;             //能量机关中心坐标
-    uint timestamp;            //采集时间戳
+    uint64_t timestamp;            //采集时间戳
     String toString();
 };
 
@@ -59,7 +59,7 @@ public slots:
 private:
     //函数
     void pretreatment(Mat *frame);
-    Target detectTarget(uint timestamp);
+    Target detectTarget(uint64_t timestamp);
 
     //变量
     std::ofstream *csv_save=nullptr;    //保存的csv文件

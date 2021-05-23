@@ -66,7 +66,7 @@ float myArctan(Point2f p)
  * @param armor 目标装甲板的中心
  * @return 是否检测到目标
  */
-Target ImageProcessor::detectTarget(uint timestamp)
+Target ImageProcessor::detectTarget(uint64_t timestamp)
 {
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
@@ -184,18 +184,17 @@ Target ImageProcessor::detectTarget(uint timestamp)
 void ImageProcessor::onNewImage(char* img_data,int height,int width)
 {
     //打印时间戳
-    uint t = time(NULL);
-    QDateTime ti=QDateTime::fromTime_t(t);
-    QString timestamp = ti.toString("mm:ss.zzz");
+    QDateTime dateTime = QDateTime::currentDateTime();
+    // 字符串格式化
+    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
     qDebug()<<timestamp;
-
-//    static int fream_count=0;
+    uint64_t mills_timestamp=dateTime.toMSecsSinceEpoch();
     //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）
     for(int i=0;i<width*height*3;i++)
         orignalImage->data[width*height*3-i-1]=img_data[i];
 
     pretreatment(orignalImage);
-    Target target=detectTarget(t);
+    Target target=detectTarget(mills_timestamp);
 
     if(recordingFlag)
     {
