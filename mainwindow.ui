@@ -613,13 +613,13 @@
      <string>跟随能量机关中心</string>
     </property>
    </widget>
-   <widget class="QChartView" name="chartWidget" native="true">
+   <widget class="ChartPainter" name="chartPainter" native="true">
     <property name="geometry">
      <rect>
-      <x>380</x>
+      <x>330</x>
       <y>200</y>
-      <width>351</width>
-      <height>251</height>
+      <width>401</width>
+      <height>291</height>
      </rect>
     </property>
    </widget>
@@ -636,13 +636,21 @@
      <string>曲线图：</string>
     </property>
    </widget>
+   <zorder>chartPainter</zorder>
+   <zorder>verticalLayoutWidget</zorder>
+   <zorder>gridLayoutWidget</zorder>
+   <zorder>verticalLayoutWidget_2</zorder>
+   <zorder>gridLayoutWidget_2</zorder>
+   <zorder>checkBoxFollowArmor</zorder>
+   <zorder>checkBoxFollowCenter</zorder>
+   <zorder>label_24</zorder>
   </widget>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QChartView</class>
+   <class>ChartPainter</class>
    <extends>QWidget</extends>
-   <header>qchartview.h</header>
+   <header>chartpainter.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -17,6 +17,7 @@
 
 #include "imageprocessor.h"
 #include "transceiver.h"
+#include "chartpainter.h"
 #include "pid.h"
 
 QT_CHARTS_USE_NAMESPACE   //使用QChart必须要添加这句
@@ -74,19 +75,19 @@ private:
     QThread processorHandler;               //图像处理线程句柄
     Transceiver * transceiver = nullptr;    //串口收发线程
     QThread transceiverHandler;             //串口收发线程句柄
+    QThread chartPainterHandler;            //绘图线程句柄
     pid pid_yaw=pid(0.015,0.002,0.0,90),pid_pit=pid(0.015,0.002,0.0,20);
     int timerID;                            //定时器ID
     int width,height,exposureTime;
 
-    QTimer *timer;                           //计时器
-    QChart *chart;                           //画布
-    QSplineSeries *series;                     //线
-    QDateTimeAxis *axisX;                    //轴
-    QValueAxis *axisY;
+//    QChart *chart;                           //画布
+//    QSplineSeries *series;                     //线
+//    QDateTimeAxis *axisX;                    //轴
+//    QValueAxis *axisY;
 
     //函数
     bool cam_init();    //初始化相机参数
-    void initDraw();    //初始化曲线图
+//    void initDraw();    //初始化曲线图
     static void GX_STDC OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame);
     static QImage cvMat2QImage(const cv::Mat& mat);
 };

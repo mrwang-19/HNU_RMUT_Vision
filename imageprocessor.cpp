@@ -169,7 +169,7 @@ Target ImageProcessor::detectTarget(uint64_t timestamp)
             }
         }
     }
-    emit new
+    emit newTarget(target);
     historyTarget.append(target);
     //TO—DO 确定历史长度
     if(historyTarget.size()>500)

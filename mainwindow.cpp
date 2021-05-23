@@ -116,7 +116,15 @@ void MainWindow::on_OpenButton_clicked()
                 processorHandler.start();
                 //创建收发线程
                 transceiver=new Transceiver(ui->serialNameEdit->text(),this);
-                initDraw();
+                transceiver->moveToThread(&transceiverHandler);
+                connect(&transceiverHandler,&QThread::finished,transceiver,&ImageProcessor::deleteLater);
+                transceiverHandler.start();
+                //创建绘图线程
+                ui->chartPainter->moveToThread(&chartPainterHandler);
+                connect(processor,&ImageProcessor::newTarget,ui->chartPainter,&ChartPainter::onTarget);
+                chartPainterHandler.start();
+
+//                initDraw();
                 timerID=startTimer(33);
                 ui->OpenButton->setText("关闭");
             }
@@ -183,7 +191,7 @@ bool MainWindow::cam_init()
     return status;
 }
 /**
- * @brief MainWindow::timerEvent    定时器处理函数，用于按照固定帧率刷新主界面上显示的图像
+ * @brief MainWindow::timerEvent    定时器处理函数，用于按照固定频率刷新主界面上显示的图像
  * @param e
  */
 void MainWindow::timerEvent(QTimerEvent*)
@@ -282,43 +290,6 @@ QImage MainWindow::cvMat2QImage(const cv::Mat& mat)
     }
 }
 
-void MainWindow::initDraw()
-{
-    QPen penY(Qt::darkBlue,3,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin);
-    chart = new QChart();
-    series = new QSplineSeries;
-    axisX = new QDateTimeAxis();
-    axisY = new QValueAxis();
-
-    chart->legend()->hide();                             //隐藏图例
-    chart->addSeries(series);                            //把线添加到chart
-    axisX->setTickCount(10);                             //设置坐标轴格数
-    axisY->setTickCount(5);
-    axisX->setFormat("hh:mm:ss");                        //设置时间显示格式
-    axisY->setMin(0);                                    //设置Y轴范围
-    axisY->setMax(10);
-    axisX->setTitleText("实时时间");                       //设置X轴名称
-    axisY->setLinePenColor(QColor(Qt::darkBlue));        //设置坐标轴颜色样式
-    axisY->setGridLineColor(QColor(Qt::darkBlue));
-    axisY->setGridLineVisible(false);                    //设置Y轴网格不显示
-    axisY->setLinePen(penY);
-    axisX->setLinePen(penY);
-
-    chart->addAxis(axisX,Qt::AlignBottom);               //设置坐标轴位于chart中的位置
-    chart->addAxis(axisY,Qt::AlignLeft);
-
-    series->attachAxis(axisX);                           //把数据添加到坐标轴上
-    series->attachAxis(axisY);
-
-    axisY->setTitleText("y1");
-
-    //把chart显示到窗口上
-    ui->chartWidget->setChart(chart);
-    ui->chartWidget->setRenderHint(QPainter::Antialiasing);   //设置抗锯齿
-}
-
-
-
 void MainWindow::on_blueDecaySpinBox_valueChanged(double arg1)
 {
     if(processor!=nullptr)
@@ -356,7 +327,6 @@ void MainWindow::on_pitKpSpinBox_valueChanged(double arg1)
 {
     pid_pit.kp=arg1;
 }
-
 
 void MainWindow::on_pitKdSpinBox_valueChanged(double arg1)
 {
