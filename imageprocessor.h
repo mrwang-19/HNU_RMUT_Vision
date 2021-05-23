@@ -50,8 +50,8 @@ public:
     Mat *orignalImage=nullptr;      //原始图片
     Mat *binaryImage=nullptr;       //二值化图片
     float t;                        //规则时间
-    bool rotateDirection=true;            //旋转方向，true顺时针，false逆时针
-    int tao=50;                     //计算角度差的间隔帧数
+    bool rotateDirection=false;            //旋转方向，true顺时针，false逆时针
+    int tao=100;                     //计算角度差的间隔帧数
     QVector<Target> historyTarget;  //历史目标队列
 
 public slots:

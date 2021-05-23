@@ -52,12 +52,12 @@ void ImageProcessor::pretreatment(Mat *frame)
  */
 float myArctan(Point2f p)
 {
-    float angle = atan2(p.y,p.x);
-    if (p.y < 0.0)
+    float angle = -atan2(p.y,p.x);
+    if (p.y > 0.0)
     {
-        angle = 57.295778*(PI- angle);
+        angle = (2*PI+angle);
     }
-    return angle;
+    return 57.295778*angle;
 }
 
 /**
@@ -166,6 +166,8 @@ Target ImageProcessor::detectTarget(uint64_t timestamp)
                         target.angleDifference=target.armorAngle-before.armorAngle;
                     }
                 }
+                if(target.angleDifference<0)
+                    target.angleDifference=360+target.angleDifference;
             }
         }
     }
