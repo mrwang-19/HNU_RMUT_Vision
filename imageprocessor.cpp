@@ -6,6 +6,8 @@
 
 #include "imageprocessor.h"
 
+#define PI 3.1415923
+
 using namespace cv;
 using namespace std;
 
@@ -43,13 +45,28 @@ void ImageProcessor::pretreatment(Mat *frame)
     morphologyEx(mid,*binaryImage,MORPH_CLOSE,kernel);
 }
 /**
+ * @brief myArctan 求一点距x轴的夹角
+ * @param p 点
+ * @return 0～360度
+ */
+float myArctan(Point2f p)
+{
+    float angle = atan2(p.y,p.x);
+    if (p.y < 0.0)
+    {
+        angle = 57.295778*(PI- angle);
+    }
+    return angle;
+}
+
+/**
  * @brief MainWindow::detect 由预处理过的视频识别能量机关的中心和目标装甲板的像素坐标
  * @param src 经过预处理（二值化）的图片
  * @param center 能量机关的中心
  * @param armor 目标装甲板的中心
  * @return 是否检测到目标
  */
-Target ImageProcessor::detectTarget(QTime timestamp)
+Target ImageProcessor::detectTarget(uint timestamp)
 {
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
@@ -105,8 +122,51 @@ Target ImageProcessor::detectTarget(QTime timestamp)
                 max_2=i;
             }*/
         }
+        //计算目标装甲板中心的像素坐标
         target.armorCenter=target.armorRect.center;
-        target.armorAngle=57.29578*atan2f(target.armorCenter.y-target.center.y,target.armorCenter.x-target.center.x);//弧度转换成角度
+        //计算目标装甲板中心相对于能量机关中心的像素坐标
+        target.normalizedCenter=Point2f(target.armorCenter.x-target.center.x,target.armorCenter.y-target.center.y);
+        //计算目标装甲板中心相对于能量机关中心x轴的夹角
+        target.armorAngle=myArctan(target.normalizedCenter);
+        //计算角度差
+        int index=historyTarget.size()+1-tao;
+        if(index>=0)
+        {
+            Target before=historyTarget[index];
+            if(before.hasTarget)
+            {
+                //顺时针旋转
+                if(rotateDirection)
+                {
+                    //如果前tao帧的角度比当前帧小
+                    if(before.armorAngle<target.armorAngle)
+                    {
+                        //角度差即为当前角度减去前tao帧的角度
+                        target.angleDifference=target.armorAngle-before.armorAngle;
+                    }
+                    //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）
+                    else
+                    {
+                        target.angleDifference=2*PI+target.armorAngle-before.armorAngle;
+                    }
+                }
+                //逆时针旋转
+                else
+                {
+                    //如果前tao帧的角度比当前帧小
+                    if(before.armorAngle<target.armorAngle)
+                    {
+                        target.angleDifference=2*PI+target.armorAngle-before.armorAngle;
+                    }
+                    //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）
+                    else
+                    {
+                        //角度差即为当前角度减去前tao帧的角度
+                        target.angleDifference=target.armorAngle-before.armorAngle;
+                    }
+                }
+            }
+        }
     }
     historyTarget.append(target);
     //TO—DO 确定历史长度
@@ -124,9 +184,10 @@ Target ImageProcessor::detectTarget(QTime timestamp)
 void ImageProcessor::onNewImage(char* img_data,int height,int width)
 {
     //打印时间戳
-    QTime time = QTime::currentTime();
-    QString timestamp = time.toString("mm:ss.zzz");
-//    qDebug()<<timestamp;
+    uint t = time(NULL);
+    QDateTime ti=QDateTime::fromTime_t(t);
+    QString timestamp = ti.toString("mm:ss.zzz");
+    qDebug()<<timestamp;
 
 //    static int fream_count=0;
     //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）
@@ -134,14 +195,13 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width)
         orignalImage->data[width*height*3-i-1]=img_data[i];
 
     pretreatment(orignalImage);
-    Point2f center,armor;
-    detectTarget(time);
+    Target target=detectTarget(t);
 
     if(recordingFlag)
     {
 //        fream_count++;
         (*recorder)<<*orignalImage;
-        (*csv_save)<<timestamp.toStdString()<<","<<center.x<<","<<center.y<<","<<armor.x<<","<<armor.y;
+        (*csv_save)<<target.toString();
     }
 
     //删除帧数据
@@ -185,4 +245,11 @@ void ImageProcessor::stopRecording()
         delete recorder;
         recorder=nullptr;
     }
+}
+
+String Target::toString()
+{
+    String r;
+    r=to_string(timestamp)+","+to_string(armorAngle)+","+to_string(angleDifference);
+    return r;
 }

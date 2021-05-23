@@ -10,10 +10,10 @@
 using namespace cv;
 using namespace std;
 //Mat src(1024,1280,CV_8UC3);
-#define WIDTH 640
-#define HEIGHT 480
+//#define WIDTH 640
+//#define HEIGHT 480
 #define PI 3.1415926
-#define _150_FPS
+//#define _150_FPS
 
 MainWindow* MainWindow::pointer_=nullptr;
 
@@ -116,10 +116,9 @@ void MainWindow::on_OpenButton_clicked()
                 processorHandler.start();
                 //创建收发线程
                 transceiver=new Transceiver(ui->serialNameEdit->text(),this);
-
+                initDraw();
                 timerID=startTimer(33);
                 ui->OpenButton->setText("关闭");
-    //            open_flag=1;
             }
         }
     }
@@ -206,6 +205,9 @@ void MainWindow::timerEvent(QTimerEvent*)
                 ui->angleLable->setNum(tmp.armorAngle);
                 ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
                 ui->armorLable->setText(QString::number(tmp.armorCenter.x,'f',4)+","+QString::number(tmp.armorCenter.y,'f',4));
+                chart->axisX()->setMin(QDateTime::currentDateTime().addSecs(-60 * 1));       //系统当前时间的前一秒
+                chart->axisX()->setMax(QDateTime::currentDateTime().addSecs(0));
+                series->append(tmp.timestamp, tmp.angleDifference);
             }
             ui->pitchAngleLable->setText(tr("%1").arg(transceiver->recvFrame.pitchAngleGet));
             ui->yawAngleLable->setText(tr("%1").arg(transceiver->recvFrame.yawAngleGet));
@@ -275,6 +277,43 @@ QImage MainWindow::cvMat2QImage(const cv::Mat& mat)
     }
 }
 
+void MainWindow::initDraw()
+{
+    QPen penY(Qt::darkBlue,3,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin);
+    chart = new QChart();
+    series = new QSplineSeries;
+    axisX = new QDateTimeAxis();
+    axisY = new QValueAxis();
+
+    chart->legend()->hide();                             //隐藏图例
+    chart->addSeries(series);                            //把线添加到chart
+    axisX->setTickCount(10);                             //设置坐标轴格数
+    axisY->setTickCount(5);
+    axisX->setFormat("hh:mm:ss");                        //设置时间显示格式
+    axisY->setMin(0);                                    //设置Y轴范围
+    axisY->setMax(10);
+    axisX->setTitleText("实时时间");                       //设置X轴名称
+    axisY->setLinePenColor(QColor(Qt::darkBlue));        //设置坐标轴颜色样式
+    axisY->setGridLineColor(QColor(Qt::darkBlue));
+    axisY->setGridLineVisible(false);                    //设置Y轴网格不显示
+    axisY->setLinePen(penY);
+    axisX->setLinePen(penY);
+
+    chart->addAxis(axisX,Qt::AlignBottom);               //设置坐标轴位于chart中的位置
+    chart->addAxis(axisY,Qt::AlignLeft);
+
+    series->attachAxis(axisX);                           //把数据添加到坐标轴上
+    series->attachAxis(axisY);
+
+    axisY->setTitleText("y1");
+
+    //把chart显示到窗口上
+    ui->chartWidget->setChart(chart);
+    ui->chartWidget->setRenderHint(QPainter::Antialiasing);   //设置抗锯齿
+}
+
+
+
 void MainWindow::on_blueDecaySpinBox_valueChanged(double arg1)
 {
     if(processor!=nullptr)
@@ -324,7 +363,7 @@ void MainWindow::on_pitKiSpinBox_valueChanged(double arg1)
     pid_pit.ki=arg1;
 }
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_shootButton_clicked()
 {
     transceiver->sendFrame.shootCommand=1;
 }

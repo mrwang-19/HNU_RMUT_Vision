@@ -3,6 +3,10 @@
 
 #include <QMainWindow>
 #include <QThread>
+#include <QtCharts/QChartView>
+#include <QtCharts/QSplineSeries>
+#include <QDateTimeAxis>
+#include <QValueAxis>
 
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -15,6 +19,9 @@
 #include "transceiver.h"
 #include "pid.h"
 
+QT_CHARTS_USE_NAMESPACE   //使用QChart必须要添加这句
+
+QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
@@ -49,6 +56,8 @@ private slots:
 
     void on_pitKiSpinBox_valueChanged(double arg1);
 
+    void on_shootButton_clicked();
+
 signals:
     void newImage(char* img_data,int height,int width);
     void startRecording(QString path);
@@ -67,10 +76,17 @@ private:
     QThread transceiverHandler;             //串口收发线程句柄
     pid pid_yaw=pid(0.015,0.002,0.0,90),pid_pit=pid(0.015,0.002,0.0,20);
     int timerID;                            //定时器ID
-
     int width,height,exposureTime;
+
+    QTimer *timer;                           //计时器
+    QChart *chart;                           //画布
+    QSplineSeries *series;                     //线
+    QDateTimeAxis *axisX;                    //轴
+    QValueAxis *axisY;
+
     //函数
-    bool cam_init();
+    bool cam_init();    //初始化相机参数
+    void initDraw();    //初始化曲线图
     static void GX_STDC OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame);
     static QImage cvMat2QImage(const cv::Mat& mat);
 };
