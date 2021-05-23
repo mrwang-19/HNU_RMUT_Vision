@@ -45,9 +45,9 @@ private slots:
 
     void on_pitKpSpinBox_valueChanged(double arg1);
 
-    void on_pPitkiSpinBox_valueChanged(double arg1);
-
     void on_pitKdSpinBox_valueChanged(double arg1);
+
+    void on_pitKiSpinBox_valueChanged(double arg1);
 
 signals:
     void newImage(char* img_data,int height,int width);

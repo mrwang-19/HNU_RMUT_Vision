@@ -24,6 +24,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     ui->OriginalImage->setScaledContents(true);
     ui->ProcessedImage->setScaledContents(true);
+    pid_pit.kp=ui->pitKpSpinBox->value();
+    pid_pit.ki=ui->pitKiSpinBox->value();
+    pid_pit.kd=ui->pitKdSpinBox->value();
+    pid_yaw.kp=ui->yawKpSpinBox->value();
+    pid_yaw.ki=ui->yawKiSpinBox->value();
+    pid_yaw.kd=ui->yawKdSpinBox->value();
     pointer_=this;
 }
 
@@ -166,7 +172,7 @@ bool MainWindow::cam_init()
     //自动白平衡
     auto status = GXSetEnum(hDevice,GX_ENUM_BALANCE_WHITE_AUTO,GX_BALANCE_WHITE_AUTO_CONTINUOUS);
     //固定曝光时长
-    status &= GXSetEnum(hDevice, GX_ENUM_EXPOSURE_MODE, GX_EXPOSURE_MODE_TIMED);
+    status &= GXSetEnum(hDevice, GX_ENUM_EXPOSURE_AUTO, GX_EXPOSURE_AUTO_OFF);
     //设置曝光时长
     status &= GXSetFloat(hDevice, GX_FLOAT_EXPOSURE_TIME, exposureTime);
     //设置分辨率
@@ -185,36 +191,39 @@ void MainWindow::timerEvent(QTimerEvent*)
 {
     if(processor!=nullptr && transceiver!=nullptr)
     {
-        Target tmp=processor->historyTarget.last();
-        Mat img=(*processor->orignalImage);
-        circle(img,tmp.center,15,Scalar(0,255,0),-1);
-        circle(img,tmp.armorCenter,15,Scalar(255,0,0),-1);
-        QImage ori=QImage((const uchar*)img.data,width,height,QImage::Format_RGB888);
-        QImage prc=QImage((const uchar*)processor->binaryImage->data,width,height,QImage::Format_Indexed8);
-        ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
-        ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
-        if(tmp.hasTarget)
+        if(processor->historyTarget.size()>0)
         {
-            ui->angleLable->setNum(tmp.armorAngle);
-            ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
-            ui->armorLable->setText(QString::number(tmp.armorCenter.x,'f',4)+","+QString::number(tmp.armorCenter.y,'f',4));
-        }
-        ui->pitchAngleLable->setText(tr("%1").arg(transceiver->recvFrame.pitchAngleGet));
-        ui->yawAngleLable->setText(tr("%1").arg(transceiver->recvFrame.yawAngleGet));
-        if(ui->checkBoxFollowCenter->isChecked())
-        {
-            transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.center.x,width/2);
-            transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.center.y,height/2);
-        }
-        else if(ui->checkBoxFollowArmor->isChecked())
-        {
-            transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.armorCenter.x,width/2+ui->hBaisSpinBox->value());
-            transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.armorCenter.y,height/2+ui->vBaisSpinBox->value());
-        }
-        else
-        {
-            transceiver->sendFrame.yawAngleSet=0;
-            transceiver->sendFrame.pitchAngleSet=0;
+            Target tmp=processor->historyTarget.last();
+            Mat img=(*processor->orignalImage);
+            circle(img,tmp.center,15,Scalar(0,255,0),-1);
+            circle(img,tmp.armorCenter,15,Scalar(255,0,0),-1);
+            QImage ori=QImage((const uchar*)img.data,width,height,QImage::Format_RGB888);
+            QImage prc=QImage((const uchar*)processor->binaryImage->data,width,height,QImage::Format_Indexed8);
+            ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
+            ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
+            if(tmp.hasTarget)
+            {
+                ui->angleLable->setNum(tmp.armorAngle);
+                ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
+                ui->armorLable->setText(QString::number(tmp.armorCenter.x,'f',4)+","+QString::number(tmp.armorCenter.y,'f',4));
+            }
+            ui->pitchAngleLable->setText(tr("%1").arg(transceiver->recvFrame.pitchAngleGet));
+            ui->yawAngleLable->setText(tr("%1").arg(transceiver->recvFrame.yawAngleGet));
+            if(ui->checkBoxFollowCenter->isChecked())
+            {
+                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.center.x,width/2);
+                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.center.y,height/2);
+            }
+            else if(ui->checkBoxFollowArmor->isChecked())
+            {
+                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.armorCenter.x,width/2+ui->hBaisSpinBox->value());
+                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.armorCenter.y,height/2+ui->vBaisSpinBox->value());
+            }
+            else
+            {
+                transceiver->sendFrame.yawAngleSet=0;
+                transceiver->sendFrame.pitchAngleSet=0;
+            }
         }
     }
 }
@@ -304,12 +313,18 @@ void MainWindow::on_pitKpSpinBox_valueChanged(double arg1)
     pid_pit.kp=arg1;
 }
 
-void MainWindow::on_pPitkiSpinBox_valueChanged(double arg1)
-{
-    pid_pit.ki=arg1;
-}
 
 void MainWindow::on_pitKdSpinBox_valueChanged(double arg1)
 {
     pid_pit.kd=arg1;
+}
+
+void MainWindow::on_pitKiSpinBox_valueChanged(double arg1)
+{
+    pid_pit.ki=arg1;
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    transceiver->sendFrame.shootCommand=1;
 }
