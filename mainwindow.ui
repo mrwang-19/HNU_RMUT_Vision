@@ -616,10 +616,10 @@
    <widget class="ChartPainter" name="chartPainter" native="true">
     <property name="geometry">
      <rect>
-      <x>330</x>
+      <x>370</x>
       <y>200</y>
-      <width>401</width>
-      <height>291</height>
+      <width>361</width>
+      <height>261</height>
      </rect>
     </property>
    </widget>
