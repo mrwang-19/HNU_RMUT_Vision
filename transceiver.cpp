@@ -15,7 +15,7 @@ Transceiver::Transceiver(QString portName, QObject *parent) : QObject(parent)
 }
 void Transceiver::timerEvent(QTimerEvent *)
 {
-    qDebug()<<sendFrame.pitchAngleSet<<","<<sendFrame.yawAngleSet;
+//    qDebug()<<sendFrame.pitchAngleSet<<","<<sendFrame.yawAngleSet;
     serial->write((char*)&sendFrame,sizeof (SendFrame));
     serial->flush();
 }

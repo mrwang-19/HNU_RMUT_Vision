@@ -208,7 +208,7 @@ void MainWindow::timerEvent(QTimerEvent*)
         }
         else if(ui->checkBoxFollowArmor->isChecked())
         {
-            transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.armorCenter.x,width/2);
+            transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.armorCenter.x,width/2+ui->hBaisSpinBox->value());
             transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.armorCenter.y,height/2+ui->vBaisSpinBox->value());
         }
         else
