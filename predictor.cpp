@@ -41,7 +41,7 @@ void Predictor::timerEvent(QTimerEvent*)
     if(processor->historyTarget.size()>samples)
     {
         problem=new ceres::Problem();
-        QVector<Target> list=processor->historyTarget;
+        QVector<Target> list(processor->historyTarget);
         int startIndex=list.size()-1-samples;
         Target start=list[startIndex];
         startTimestamp=start.timestamp;

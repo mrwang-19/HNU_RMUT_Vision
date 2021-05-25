@@ -61,7 +61,7 @@ float myArctan(Point2f p)
     {
         angle = (2*PI + angle);
     }
-    return angle;
+    return 2*PI-angle;
 }
 
 /**

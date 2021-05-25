@@ -9,11 +9,6 @@
 //202-4-24
 using namespace cv;
 using namespace std;
-//Mat src(1024,1280,CV_8UC3);
-//#define WIDTH 640
-//#define HEIGHT 480
-#define PI 3.1415926
-//#define _150_FPS
 
 MainWindow* MainWindow::pointer_=nullptr;
 
