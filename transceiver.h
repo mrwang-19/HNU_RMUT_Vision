@@ -33,6 +33,7 @@ public:
     ~Transceiver();
     SendFrame sendFrame;
     RecvFrame recvFrame;
+    int timerID;
 
 signals:
 

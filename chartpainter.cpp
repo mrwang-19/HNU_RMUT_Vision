@@ -14,8 +14,12 @@ ChartPainter::ChartPainter(QWidget *parent) : QCustomPlot(parent)
     */
     addGraph(); // blue line
     graph(0)->setPen(QPen(QColor(40, 110, 255)));
+    graph(0)->setLineStyle(QCPGraph::lsNone);
+    graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
     addGraph(); // red line
     graph(1)->setPen(QPen(QColor(255, 110, 40)));
+    graph(1)->setLineStyle(QCPGraph::lsNone);
+    graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
 
     QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
     timeTicker->setTimeFormat("%h:%m:%s");
@@ -48,7 +52,5 @@ void ChartPainter::onTarget(Target target)
         }
         // make key axis range scroll with the data (at a constant range size of 8):
         xAxis->setRange(key, 8, Qt::AlignRight);
-        replot();
-
     }
 }

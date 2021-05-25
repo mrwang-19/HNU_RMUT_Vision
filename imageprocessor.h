@@ -6,7 +6,9 @@
 #include <QString>
 #include <QMetaType>
 #include <QVector>
-
+#include <QMutex>
+#include <QFuture>
+#include <QtConcurrent>
 #include <string>
 
 
@@ -16,13 +18,15 @@
 using namespace cv;
 using namespace std;
 
+#define PI 3.1415923
+
 /**
  * @brief The Target struct 存放每帧识别到的能量机关信息
  */
 struct Target
 {
-    int index;                  //序号
-    bool hasTarget;             //是否含有有效目标
+    uint64 index;                  //序号
+    bool hasTarget=true;             //是否含有有效目标
     char lightNum;              //已点亮的灯条数
     RotatedRect armorRect;      //要击打的装甲板的边缘矩形
     Point2f armorCenter;        //要击打的装甲板的中心像素坐标
@@ -43,6 +47,7 @@ class ImageProcessor : public QObject
     Q_OBJECT
 public:
     explicit ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate,double blueDecay,QObject *parent = nullptr);
+    ~ImageProcessor();
     uint16_t height,width;          //图像高宽
     uint16_t frameRate;             //帧率
     double blueDecay;               //蓝色衰减
@@ -50,9 +55,13 @@ public:
     Mat *orignalImage=nullptr;      //原始图片
     Mat *binaryImage=nullptr;       //二值化图片
     float t;                        //规则时间
-    bool rotateDirection=true;            //旋转方向，true顺时针，false逆时针
+    bool rotateDirection=true;      //旋转方向，true顺时针，false逆时针
     int tao=50;                     //计算角度差的间隔帧数
+    QVector<Mat> frameQueue;        //帧队列
+    QMutex frameLock;               //帧队列锁
     QVector<Target> historyTarget;  //历史目标队列
+    QMutex historyLock;             //历史目标队列锁
+    QThreadPool processors;         //消费者线程池
 
 public slots:
     void startRecording(QString savePath);
@@ -60,8 +69,8 @@ public slots:
     void onNewImage(char* img_data,int height,int width);
 private:
     //函数
-    void pretreatment(Mat *frame);
-    Target detectTarget(uint64_t timestamp);
+    Mat pretreatment(Mat frame);
+    void detectTarget(uint64_t timestamp);
 
     //变量
     std::ofstream *csv_save=nullptr;    //保存的csv文件

@@ -14,6 +14,7 @@
 #include "imageprocessor.h"
 #include "transceiver.h"
 #include "chartpainter.h"
+#include "predictor.h"
 #include "pid.h"
 
 QT_BEGIN_NAMESPACE
@@ -69,6 +70,8 @@ private:
     QThread processorHandler;               //图像处理线程句柄
     Transceiver * transceiver = nullptr;    //串口收发线程
     QThread transceiverHandler;             //串口收发线程句柄
+    Predictor * predictor = nullptr;        //预测线程
+    QThread predictorHandler;               //预测线程句柄
     QThread chartPainterHandler;            //绘图线程句柄
     pid pid_yaw=pid(0.015,0.002,0.0,90),pid_pit=pid(0.015,0.002,0.0,20);
     int timerID;                            //定时器ID

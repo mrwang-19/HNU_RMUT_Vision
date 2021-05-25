@@ -35,6 +35,13 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    if(hDevice!=nullptr)
+    {
+        on_OpenButton_clicked();
+        while (!processorHandler.isFinished()) {
+            ;
+        }
+    }
     delete ui;
 }
 /// 采集完成回调函数，每拍一帧就会在大恒SDK的采集线程中被调用一次
@@ -107,7 +114,7 @@ void MainWindow::on_OpenButton_clicked()
                 //发送开采命令
                 GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_START);
                 //创建处理线程
-                processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value(),this);
+                processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value());
                 processor->moveToThread(&processorHandler);
                 connect(this,&MainWindow::newImage,processor,&ImageProcessor::onNewImage);
                 connect(this,&MainWindow::startRecording,processor,&ImageProcessor::startRecording);
@@ -115,7 +122,7 @@ void MainWindow::on_OpenButton_clicked()
                 connect(&processorHandler,&QThread::finished,processor,&ImageProcessor::deleteLater);
                 processorHandler.start();
                 //创建收发线程
-                transceiver=new Transceiver(ui->serialNameEdit->text(),this);
+                transceiver=new Transceiver(ui->serialNameEdit->text());
                 transceiver->moveToThread(&transceiverHandler);
                 connect(&transceiverHandler,&QThread::finished,transceiver,&ImageProcessor::deleteLater);
                 transceiverHandler.start();
@@ -123,7 +130,11 @@ void MainWindow::on_OpenButton_clicked()
                 ui->chartPainter->moveToThread(&chartPainterHandler);
                 connect(processor,&ImageProcessor::newTarget,ui->chartPainter,&ChartPainter::onTarget);
                 chartPainterHandler.start();
-
+                //创建预测线程
+                predictor = new Predictor(processor,200);
+                connect(&predictorHandler,&QThread::finished,predictor,&Predictor::deleteLater);
+                predictor->moveToThread(&predictorHandler);
+                predictorHandler.start();
 //                initDraw();
                 timerID=startTimer(33);
                 ui->OpenButton->setText("关闭");
@@ -139,16 +150,16 @@ void MainWindow::on_OpenButton_clicked()
         GXCloseDevice(hDevice);
         //删除相机句柄
         hDevice=nullptr;
-        //销毁处理线程
-        processorHandler.quit();
-        delete processor;
-        processor=nullptr;
-        //销毁收发线程
-        transceiverHandler.quit();
-        delete transceiver;
-        transceiver=nullptr;
         //销毁绘图线程
         chartPainterHandler.quit();
+        //销毁预测线程
+        predictorHandler.quit();
+        //销毁收发线程
+        transceiverHandler.quit();
+        transceiver=nullptr;
+        //销毁处理线程
+        processorHandler.quit();
+        processor=nullptr;
         //改变按钮文本
         ui->OpenButton->setText("打开");
     }
@@ -198,31 +209,31 @@ bool MainWindow::cam_init()
  */
 void MainWindow::timerEvent(QTimerEvent*)
 {
-    //打印时间戳
-    QDateTime dateTime = QDateTime::currentDateTime();
-    // 字符串格式化
-    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
-    qDebug()<<"main:"<<timestamp;
     if(processor!=nullptr && transceiver!=nullptr)
     {
         if(processor->historyTarget.size()>0)
         {
             Target tmp=processor->historyTarget.last();
-            Mat img=(*processor->orignalImage);
-            circle(img,tmp.center,15,Scalar(0,255,0),-1);
-            circle(img,tmp.armorCenter,15,Scalar(255,0,0),-1);
-            QImage ori=QImage((const uchar*)img.data,width,height,QImage::Format_RGB888);
-            QImage prc=QImage((const uchar*)processor->binaryImage->data,width,height,QImage::Format_Indexed8);
-            ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
-            ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
+
+            if(processor->frameQueue.size()>0)
+            {
+                auto p=predictor->predictPoint(1.5);
+                Mat img=processor->frameQueue.last();
+                circle(img,tmp.center,15,Scalar(0,255,0),-1);
+                circle(img,tmp.armorCenter,15,Scalar(255,0,0),-1);
+                circle(img,p,15,Scalar(255,255,0),-1);
+                QImage ori=QImage((const uchar*)img.data,width,height,QImage::Format_RGB888);
+//                QImage prc=QImage((const uchar*)processor->binaryImage->data,width,height,QImage::Format_Indexed8);
+                ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
+//                ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
+            }
             if(tmp.hasTarget)
             {
+
+//                qDebug()<<"main:"<<tmp.index<<" "<<timestamp;
                 ui->angleLable->setNum(tmp.armorAngle);
                 ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
                 ui->armorLable->setText(QString::number(tmp.armorCenter.x,'f',4)+","+QString::number(tmp.armorCenter.y,'f',4));
-//                chart->axisX()->setMin(QDateTime::currentDateTime().addSecs(-60 * 1));       //系统当前时间的前一秒
-//                chart->axisX()->setMax(QDateTime::currentDateTime().addSecs(0));
-//                series->append(tmp.timestamp, tmp.angleDifference);
             }
             ui->pitchAngleLable->setText(tr("%1").arg(transceiver->recvFrame.pitchAngleGet));
             ui->yawAngleLable->setText(tr("%1").arg(transceiver->recvFrame.yawAngleGet));
@@ -242,6 +253,7 @@ void MainWindow::timerEvent(QTimerEvent*)
                 transceiver->sendFrame.pitchAngleSet=0;
             }
         }
+        ui->chartPainter->replot();
     }
 }
 

@@ -6,8 +6,6 @@
 
 #include "imageprocessor.h"
 
-#define PI 3.1415923
-
 using namespace cv;
 using namespace std;
 
@@ -22,16 +20,21 @@ ImageProcessor::ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate
     orignalImage = new  Mat(height,width,CV_8UC3);
     binaryImage = new Mat(height,width,CV_8UC1);
 }
-
+ImageProcessor::~ImageProcessor()
+{
+    processors.waitForDone();
+    delete orignalImage;
+    delete binaryImage;
+}
 /**
  * @brief pretreatment 预处理采集到的图像帧
  * @param frame 采集到的原始图像帧
  * @return 预处理后的二值化图像
  */
-void ImageProcessor::pretreatment(Mat *frame)
+Mat ImageProcessor::pretreatment(Mat frame)
 {
-    Mat channels[3],mid;
-    split(*frame,channels);
+    Mat channels[3],mid,bin;
+    split(frame,channels);
     //衰减蓝色通道
     for(int i=0;i<width*height;i++)
     {
@@ -39,23 +42,24 @@ void ImageProcessor::pretreatment(Mat *frame)
     }
     //红通道-蓝通道
     subtract(channels[0],channels[2],mid);
-    threshold(mid,*binaryImage,100,255,THRESH_BINARY);
+    threshold(mid,bin,100,255,THRESH_BINARY);
     Mat element = getStructuringElement(MORPH_ELLIPSE,Point(5,5));
-    dilate(*binaryImage,mid,element);
+    dilate(bin,mid,element);
     Mat kernel = getStructuringElement(MORPH_ELLIPSE,Point(7,7));
-    morphologyEx(mid,*binaryImage,MORPH_CLOSE,kernel);
+    morphologyEx(mid,bin,MORPH_CLOSE,kernel);
+    return bin;
 }
 /**
  * @brief myArctan 求一点距x轴的夹角
  * @param p 点
- * @return 0～360度
+ * @return 由x轴正方向开始逆时针旋转0～2pi
  */
 float myArctan(Point2f p)
 {
     float angle = atan2(p.y,p.x);
     if (p.y < 0.0)
     {
-        angle = 57.295778*(PI- angle);
+        angle = (2*PI + angle);
     }
     return angle;
 }
@@ -67,20 +71,36 @@ float myArctan(Point2f p)
  * @param armor 目标装甲板的中心
  * @return 是否检测到目标
  */
-Target ImageProcessor::detectTarget(uint64_t timestamp)
+void ImageProcessor::detectTarget(uint64_t timestamp)
 {
+    static uint64 frame_count=0;
+    Mat binaryImage;
+    Target target;
+    target.index=frame_count;
+    target.timestamp=timestamp;
+    frameLock.lock();
+    if(frameQueue.size()>1)
+        binaryImage=pretreatment(frameQueue.takeFirst());
+    else
+    {
+        frameLock.unlock();
+        return;
+    }
+    frameLock.unlock();
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
-    findContours(*binaryImage,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+    //打印时间戳
+//    QDateTime dateTime = QDateTime::fromMSecsSinceEpoch(timestamp);
+//    qDebug()<<"processor:"<<frame_count<<" "<<dateTime.toString("hh:mm:ss.zzz");
+    findContours(binaryImage,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
     //    drawContours(fliped,contours,max,Scalar(0,255,0),5);
     //    drawContours(fliped,contours,min,Scalar(255,0,0),5);
     float max_area=0.0,min_area=10000.0;
-    Target target;
-    target.timestamp=timestamp;
     if(contours.size()<2)
     {
         target.center=Point2f(width/2,height/2);
         target.hasTarget=false;
+//        qDebug()<<frame_count<<"has no target";
     }
     else
     {
@@ -139,16 +159,16 @@ Target ImageProcessor::detectTarget(uint64_t timestamp)
                 //顺时针旋转
                 if(rotateDirection)
                 {
-                    //如果前tao帧的角度比当前帧小
-                    if(before.armorAngle<target.armorAngle)
+                    //如果前tao帧的角度比当前帧大
+                    if(before.armorAngle>target.armorAngle)
                     {
                         //角度差即为当前角度减去前tao帧的角度
-                        target.angleDifference=target.armorAngle-before.armorAngle;
+                        target.angleDifference=before.armorAngle-target.armorAngle;
                     }
-                    //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）
+                    //如果前tao帧的角度比当前帧小（旋转过程中经过了x轴正半轴）
                     else
                     {
-                        target.angleDifference=2*PI+target.armorAngle-before.armorAngle;
+                        target.angleDifference=2*PI-target.armorAngle+before.armorAngle;
                     }
                 }
                 //逆时针旋转
@@ -157,25 +177,27 @@ Target ImageProcessor::detectTarget(uint64_t timestamp)
                     //如果前tao帧的角度比当前帧小
                     if(before.armorAngle<target.armorAngle)
                     {
-                        target.angleDifference=2*PI+target.armorAngle-before.armorAngle;
+                        target.angleDifference=target.armorAngle-before.armorAngle;
                     }
                     //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）
                     else
                     {
                         //角度差即为当前角度减去前tao帧的角度
-                        target.angleDifference=target.armorAngle-before.armorAngle;
+                        target.angleDifference=2*PI+target.armorAngle-before.armorAngle;
                     }
                 }
             }
         }
     }
     emit newTarget(target);
+    historyLock.lock();
     historyTarget.append(target);
     //TO—DO 确定历史长度
     if(historyTarget.size()>500)
         historyTarget.pop_front();//移除最早的数据
+    historyLock.unlock();
 //    qDebug()<<"历史目标数："<<historyTarget.size();
-    return target;
+    frame_count++;
 }
 ///
 /// \brief ImageProcessor::onNewImage
@@ -188,22 +210,27 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width)
     //打印时间戳
     QDateTime dateTime = QDateTime::currentDateTime();
     // 字符串格式化
-    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
-//    qDebug()<<timestamp;
+//    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
+//    qDebug()<<QThread::currentThread()<<timestamp;
     uint64_t mills_timestamp=dateTime.toMSecsSinceEpoch();
+    Mat frame=Mat(height,width,CV_8UC3);
     //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）
     for(int i=0;i<width*height*3;i++)
-        orignalImage->data[width*height*3-i-1]=img_data[i];
+        frame.data[width*height*3-i-1]=img_data[i];
+    frameLock.lock();
+    frameQueue.append(frame);
+    frameLock.unlock();
+    QFuture<void> future = QtConcurrent::run(&processors,this,&ImageProcessor::detectTarget,mills_timestamp);
 
-    pretreatment(orignalImage);
-    Target target=detectTarget(mills_timestamp);
+//    pretreatment(orignalImage);
+//    Target target=detectTarget(mills_timestamp);
 
-    if(recordingFlag)
-    {
-//        fream_count++;
-        (*recorder)<<*orignalImage;
-        (*csv_save)<<target.toString();
-    }
+//    if(recordingFlag)
+//    {
+////        fream_count++;
+//        (*recorder)<<*orignalImage;
+//        (*csv_save)<<target.toString();
+//    }
 
     //删除帧数据
     delete [] img_data;
