@@ -213,7 +213,8 @@ void MainWindow::timerEvent(QTimerEvent*)
             if(processor->frameQueue.size()>0)
             {
                 auto p=predictor->predictPoint(1.5);
-                Mat img=processor->frameQueue.last();
+                Mat img;
+                processor->frameQueue.last().copyTo(img);
                 circle(img,tmp.center,15,Scalar(0,255,0),-1);
                 circle(img,tmp.armorCenter,15,Scalar(255,0,0),-1);
                 circle(img,p,15,Scalar(255,255,0),-1);

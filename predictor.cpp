@@ -6,7 +6,7 @@ Predictor::Predictor(ImageProcessor * processor,int samples,QObject *parent) :
     samples(samples),
     processor(processor)
 {
-    tao=processor->tao/150;
+    tao=(float)processor->tao/150;
     // 配置求解器
     // 这里有很多配置项可以填
     options.linear_solver_type = ceres::DENSE_QR;  // 增量方程如何求解
