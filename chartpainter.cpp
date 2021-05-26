@@ -20,7 +20,10 @@ ChartPainter::ChartPainter(QWidget *parent) : QCustomPlot(parent)
     graph(1)->setPen(QPen(QColor(255, 110, 40)));
     graph(1)->setLineStyle(QCPGraph::lsNone);
     graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
-
+    addGraph(); // blue line
+    graph(2)->setPen(QPen(QColor(40, 255, 110)));
+    graph(2)->setLineStyle(QCPGraph::lsNone);
+    graph(2)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
     QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
     timeTicker->setTimeFormat("%h:%m:%s");
     xAxis->setTicker(timeTicker);
@@ -36,7 +39,6 @@ void ChartPainter::onTarget(Target target)
 {
     if(target.hasTarget)
     {
-        static QTime timeStart = QTime::currentTime();
         // calculate two new data points:
         double key = timeStart.msecsTo(QTime::currentTime())/1000.0; // time elapsed since start of demo, in seconds
         static double lastPointKey = 0;
@@ -53,4 +55,9 @@ void ChartPainter::onTarget(Target target)
         // make key axis range scroll with the data (at a constant range size of 8):
         xAxis->setRange(key, 8, Qt::AlignRight);
     }
+}
+void ChartPainter::onTao(double timestamp,float tao)
+{
+    double key = timeStart.msecsTo(QTime::currentTime())/1000.0;
+    graph(2)->addData(key , tao);
 }

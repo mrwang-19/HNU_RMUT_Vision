@@ -128,6 +128,7 @@ void MainWindow::on_OpenButton_clicked()
                 //创建预测线程
                 predictor = new Predictor(processor,200);
                 connect(&predictorHandler,&QThread::finished,predictor,&Predictor::deleteLater);
+                connect(predictor,&Predictor::newTao,ui->chartPainter,&ChartPainter::onTao);
                 predictor->moveToThread(&predictorHandler);
                 predictorHandler.start();
 //                initDraw();

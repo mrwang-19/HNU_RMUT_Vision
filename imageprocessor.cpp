@@ -178,6 +178,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                     if(before.armorAngle<target.armorAngle)
                     {
                         target.angleDifference=target.armorAngle-before.armorAngle;
+//                        qDebug()<<before.armorAngle<<" "<<target.armorAngle<<" "<<target.angleDifference;
                     }
                     //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）
                     else

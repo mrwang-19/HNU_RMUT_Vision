@@ -13,8 +13,9 @@ public:
     explicit ChartPainter(QWidget *parent = nullptr);
 public slots:
     void onTarget(Target target);
+    void onTao(double timestamp,float tao);
 private:
-
+    QTime timeStart = QTime::currentTime();
 
 signals:
 

@@ -36,7 +36,7 @@ protected:
     void timerEvent(QTimerEvent *e);
 
 signals:
-
+    void newTao(double timestamp,float tao);
 };
 
 #endif // PREDICTOR_H

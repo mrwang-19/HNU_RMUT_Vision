@@ -63,12 +63,12 @@ void Predictor::timerEvent(QTimerEvent*)
         }
         if(count>samples-10)
         {
-            problem->SetParameterLowerBound(phi,0,-3.1415926536);
-            problem->SetParameterUpperBound(phi,0,3.1415926536);
+//            problem->SetParameterLowerBound(phi,0,-3.1415926536);
+            problem->SetParameterUpperBound(phi,0,2*3.1415926536);
             ceres::Solver::Summary summary;                // 优化信息
             ceres::Solve ( options,problem, &summary );  // 开始优化
-            cout<<summary.BriefReport() <<endl;
-            qDebug()<<phi[0];
+//            cout<<summary.BriefReport() <<endl;
+            emit newTao(startTimestamp/1000.0,phi[0]);
         }
         delete problem;
     }
