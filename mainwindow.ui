@@ -508,10 +508,38 @@
       <x>380</x>
       <y>0</y>
       <width>321</width>
-      <height>171</height>
+      <height>199</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout_2">
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_13">
+       <property name="text">
+        <string>pitch轴角度：</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLabel" name="centerLable">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_12">
+       <property name="text">
+        <string>目标装甲板中心坐标：</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="label_25">
+       <property name="text">
+        <string>解算的pitch轴角度</string>
+       </property>
+      </widget>
+     </item>
      <item row="4" column="0">
       <widget class="QLabel" name="label_16">
        <property name="text">
@@ -529,24 +557,17 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_11">
+     <item row="2" column="1">
+      <widget class="QLabel" name="armorLable">
        <property name="text">
-        <string>能量机关中心坐标：</string>
+        <string/>
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_13">
+     <item row="4" column="1">
+      <widget class="QLabel" name="yawAngleLable">
        <property name="text">
-        <string>pitch轴角度：</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_12">
-       <property name="text">
-        <string>目标装甲板中心坐标：</string>
+        <string/>
        </property>
       </widget>
      </item>
@@ -557,17 +578,10 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QLabel" name="centerLable">
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_11">
        <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QLabel" name="armorLable">
-       <property name="text">
-        <string/>
+        <string>能量机关中心坐标：</string>
        </property>
       </widget>
      </item>
@@ -578,8 +592,22 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
-      <widget class="QLabel" name="yawAngleLable">
+     <item row="6" column="0">
+      <widget class="QLabel" name="label_26">
+       <property name="text">
+        <string>解算的yaw轴角度</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QLabel" name="calcPitLable">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QLabel" name="calcYawLable">
        <property name="text">
         <string/>
        </property>
@@ -623,19 +651,6 @@
      </rect>
     </property>
    </widget>
-   <widget class="QLabel" name="label_24">
-    <property name="geometry">
-     <rect>
-      <x>380</x>
-      <y>180</y>
-      <width>67</width>
-      <height>17</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>曲线图：</string>
-    </property>
-   </widget>
    <zorder>chartPainter</zorder>
    <zorder>verticalLayoutWidget</zorder>
    <zorder>gridLayoutWidget</zorder>
@@ -643,7 +658,6 @@
    <zorder>gridLayoutWidget_2</zorder>
    <zorder>checkBoxFollowArmor</zorder>
    <zorder>checkBoxFollowCenter</zorder>
-   <zorder>label_24</zorder>
   </widget>
  </widget>
  <customwidgets>

@@ -85,7 +85,7 @@ Point2f Predictor::predictPoint(float predictTime)
     float x=currentTarget.normalizedCenter.x;
     float y=currentTarget.normalizedCenter.y;
     //顺时针旋转
-    if(processor->rotateDirection)
+    if(!processor->rotateDirection)
         predictAngleDifference=-predictAngleDifference;
     tmp.x=x*cos(predictAngleDifference)-y*sin(predictAngleDifference);
     tmp.y=y*cos(predictAngleDifference)+x*sin(predictAngleDifference);

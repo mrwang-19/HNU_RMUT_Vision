@@ -226,7 +226,7 @@ void MainWindow::timerEvent(QTimerEvent*)
                     lastTimestamp=dateTime.currentDateTime().toMSecsSinceEpoch();
                     transceiver->sendFrame.shootCommand=1;
                 }
-                p=predictor->predictPoint(1.5-timePassed);
+                p=predictor->predictPoint(1.5);
                 Mat img;
                 processor->frameQueue.last().copyTo(img);
                 circle(img,tmp.center,15,Scalar(0,255,0),-1);
@@ -259,11 +259,13 @@ void MainWindow::timerEvent(QTimerEvent*)
             {
 //                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.armorCenter.x,width/2+ui->hBaisSpinBox->value());
 //                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.armorCenter.y,height/2+ui->vBaisSpinBox->value());
-                auto pnt=Point2f(tmp.armorCenter.y+height/2+ui->vBaisSpinBox->value(),tmp.armorCenter.x+ui->hBaisSpinBox->value());
+                auto pnt=Point2f(p.x,p.y-ui->vBaisSpinBox->value());
                 float y,p;
                 angleSolver.getAngle(pnt,y,p);
-                transceiver->sendFrame.yawAngleSet=transceiver->recvFrame.yawAngleGet+y;
-                transceiver->recvFrame.pitchAngleGet=transceiver->recvFrame.pitchAngleGet+p;
+                ui->calcPitLable->setText(QString::number(p));
+                ui->calcYawLable->setText(QString::number(y));
+                transceiver->sendFrame.yawAngleSet=transceiver->recvFrame.yawAngleGet-y;
+                transceiver->sendFrame.pitchAngleSet=transceiver->recvFrame.pitchAngleGet+p;
             }
             else
             {
