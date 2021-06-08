@@ -18,8 +18,6 @@
 using namespace cv;
 using namespace std;
 
-#define PI 3.1415923
-
 /**
  * @brief The Target struct 存放每帧识别到的能量机关信息
  */

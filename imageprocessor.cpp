@@ -59,9 +59,9 @@ float myArctan(Point2f p)
     float angle = atan2(p.y,p.x);
     if (p.y < 0.0)
     {
-        angle = (2*PI + angle);
+        angle = (CV_2PI + angle);
     }
-    return 2*PI-angle;
+    return CV_2PI-angle;
 }
 
 /**
@@ -168,7 +168,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                     //如果前tao帧的角度比当前帧小（旋转过程中经过了x轴正半轴）
                     else
                     {
-                        target.angleDifference=2*PI-target.armorAngle+before.armorAngle;
+                        target.angleDifference=CV_2PI-target.armorAngle+before.armorAngle;
                     }
                 }
                 //逆时针旋转
@@ -184,7 +184,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                     else
                     {
                         //角度差即为当前角度减去前tao帧的角度
-                        target.angleDifference=2*PI+target.armorAngle-before.armorAngle;
+                        target.angleDifference=CV_2PI+target.armorAngle-before.armorAngle;
                     }
                 }
             }
