@@ -12,8 +12,9 @@
 #include "Daheng_inc/GxIAPI.h"
 
 #include "imageprocessor.h"
-#include "transceiver.h"
 #include "chartpainter.h"
+#include "anglesolver.h"
+#include "transceiver.h"
 #include "predictor.h"
 #include "pid.h"
 
@@ -76,7 +77,8 @@ private:
     pid pid_yaw=pid(0.015,0.002,0.0,90),pid_pit=pid(0.015,0.002,0.0,20);
     uint64 lastTimestamp;                   //上次迭代时间
     int timerID;                            //定时器ID
-    int width,height,exposureTime;
+    int width,height,exposureTime;          //图像宽度、高度、曝光时长
+    AngleSolver angleSolver;                //角度解算类
 
 
     //函数

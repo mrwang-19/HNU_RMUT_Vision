@@ -67,7 +67,8 @@ public:
     * @param output distance  unit is mm
     */
     void getAngle(vector<Point2f> & contourPoints, Point2f centerPoint, ArmorType type, double & yaw, double & pitch, double & evaluateDistance);
-
+    //单纯小孔成像结算角版本
+    void getAngle(Point2f centerPoint, float & yaw, float & pitch);
     /**
     * @brief show debug information
     */
@@ -87,6 +88,7 @@ private:
     double BULLET_SPEED;
 
     //distance between camera and barrel in y axis(positive when camera is under barrel)  barrel_y = camera_y + barrel_camera_y
+    //相机和枪管的y轴偏移（当相机在枪管下方时取正值）
     double GUN_CAM_DISTANCE_Y;
 
     //Targets

@@ -45,6 +45,7 @@ int AngleSolver::setCameraParam(const char * filePath, int camId)
         break;
     default:
         cout << "WRONG CAMID GIVEN!" << endl;
+        exit(1);
         break;
     }
     setCameraParam(camera_matrix, distortion_coeff);
@@ -183,6 +184,13 @@ void AngleSolver::getAngle(vector<Point2f>& contourPoints,Point2f cenerPoint, Ar
     yaw = y_yaw;
     pitch = x_pitch;
     evaluateDistance = distance;
+}
+void AngleSolver::getAngle(Point2f centerPoint, float & yaw, float & pitch)
+{
+    targetCenter = centerPoint;
+    PinHole_solver();
+    yaw = (float)y_yaw;
+    pitch = (float)x_pitch;
 }
 
 void AngleSolver::showDebugInfo(bool showCurrentResult, bool showTVec, bool showP4P, bool showPinHole, bool showCompensation, bool showCameraParams)

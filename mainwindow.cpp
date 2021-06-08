@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     pid_yaw.kp=ui->yawKpSpinBox->value();
     pid_yaw.ki=ui->yawKiSpinBox->value();
     pid_yaw.kd=ui->yawKdSpinBox->value();
+    angleSolver.setCameraParam("../HNU_RMUT_Version/camera_params.xml", 1);
     pointer_=this;
 }
 
@@ -211,6 +212,7 @@ void MainWindow::timerEvent(QTimerEvent*)
         {
             Target tmp=processor->historyTarget.last();
             Point2f p;
+            //预测目标并刷新预览图
             if(processor->frameQueue.size()>0)
             {
                 //打印时间戳
@@ -232,6 +234,7 @@ void MainWindow::timerEvent(QTimerEvent*)
                 ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
 //                ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
             }
+            //刷新目标信息
             if(tmp.hasTarget)
             {
 
@@ -240,8 +243,10 @@ void MainWindow::timerEvent(QTimerEvent*)
                 ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
                 ui->armorLable->setText(QString::number(tmp.armorCenter.x,'f',4)+","+QString::number(tmp.armorCenter.y,'f',4));
             }
+            //刷新云台角度
             ui->pitchAngleLable->setText(tr("%1").arg(transceiver->recvFrame.pitchAngleGet));
             ui->yawAngleLable->setText(tr("%1").arg(transceiver->recvFrame.yawAngleGet));
+            //PID闭环
             if(ui->checkBoxFollowCenter->isChecked())
             {
                 transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(p.x,width/2+ui->hBaisSpinBox->value());
@@ -249,8 +254,13 @@ void MainWindow::timerEvent(QTimerEvent*)
             }
             else if(ui->checkBoxFollowArmor->isChecked())
             {
-                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.armorCenter.x,width/2+ui->hBaisSpinBox->value());
-                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.armorCenter.y,height/2+ui->vBaisSpinBox->value());
+//                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.armorCenter.x,width/2+ui->hBaisSpinBox->value());
+//                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.armorCenter.y,height/2+ui->vBaisSpinBox->value());
+                auto pnt=Point2f(tmp.armorCenter.y+height/2+ui->vBaisSpinBox->value(),tmp.armorCenter.x+ui->hBaisSpinBox->value());
+                float y,p;
+                angleSolver.getAngle(pnt,y,p);
+                transceiver->sendFrame.yawAngleSet=transceiver->recvFrame.yawAngleGet+y;
+                transceiver->recvFrame.pitchAngleGet=transceiver->recvFrame.pitchAngleGet+p;
             }
             else
             {
@@ -258,6 +268,7 @@ void MainWindow::timerEvent(QTimerEvent*)
                 transceiver->sendFrame.pitchAngleSet=0;
             }
         }
+        //重绘图表
         ui->chartPainter->replot();
     }
 }
