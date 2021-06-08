@@ -38,4 +38,7 @@ void Transceiver::receiveData()
     }
     if(recvFrame.head!=0xbbbb)
         memset(&recvFrame,0,sizeof (RecvFrame));
+    //如果已发射则取消发射指令
+    if(recvFrame.shootStatusGet)
+        sendFrame.shootCommand=0;
 }

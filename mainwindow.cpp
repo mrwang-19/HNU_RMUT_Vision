@@ -222,8 +222,11 @@ void MainWindow::timerEvent(QTimerEvent*)
 //                qDebug()<<QThread::currentThread()<<timestamp;
                 float timePassed=(dateTime.toMSecsSinceEpoch()-lastTimestamp)/1000.0;
                 if(timePassed>1.5)
+                {
                     lastTimestamp=dateTime.currentDateTime().toMSecsSinceEpoch();
-                p=predictor->predictPoint(timePassed);
+                    transceiver->sendFrame.shootCommand=1;
+                }
+                p=predictor->predictPoint(1.5-timePassed);
                 Mat img;
                 processor->frameQueue.last().copyTo(img);
                 circle(img,tmp.center,15,Scalar(0,255,0),-1);
