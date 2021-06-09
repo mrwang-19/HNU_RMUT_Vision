@@ -191,6 +191,9 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
         }
     }
     emit newTarget(target);
+    if(recordingFlag)
+        (*csv_save)<<target.toString();
+
     historyLock.lock();
     historyTarget.append(target);
     //TO—DO 确定历史长度
@@ -218,6 +221,8 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width)
     //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）
     for(int i=0;i<width*height*3;i++)
         frame.data[width*height*3-i-1]=img_data[i];
+    if(recordingFlag)
+        (*recorder)<<frame;
     frameLock.lock();
     frameQueue.append(frame);
     frameLock.unlock();
@@ -225,13 +230,6 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width)
 
 //    pretreatment(orignalImage);
 //    Target target=detectTarget(mills_timestamp);
-
-//    if(recordingFlag)
-//    {
-////        fream_count++;
-//        (*recorder)<<*orignalImage;
-//        (*csv_save)<<target.toString();
-//    }
 
     //删除帧数据
     delete [] img_data;
