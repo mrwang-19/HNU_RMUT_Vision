@@ -16,6 +16,7 @@
 #include "anglesolver.h"
 #include "transceiver.h"
 #include "predictor.h"
+#include "camera.h"
 #include "pid.h"
 
 QT_BEGIN_NAMESPACE
@@ -56,7 +57,6 @@ private slots:
     void on_shootButton_clicked();
 
 signals:
-    void newImage(char* img_data,int height,int width);
     void startRecording(QString path);
     void stopRecording();
 
@@ -66,7 +66,7 @@ protected:
 private:
     //变量
     Ui::MainWindow *ui;
-    GX_DEV_HANDLE hDevice = nullptr;        //相机句柄
+    Camera cam;                       //相机包装类
     ImageProcessor * processor = nullptr;   //图像处理线程类
     QThread processorHandler;               //图像处理线程句柄
     Transceiver * transceiver = nullptr;    //串口收发线程
@@ -80,10 +80,8 @@ private:
     int width,height,exposureTime;          //图像宽度、高度、曝光时长
     AngleSolver angleSolver;                //角度解算类
 
-
     //函数
     bool cam_init();    //初始化相机参数
-    static void GX_STDC OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame);
     static QImage cvMat2QImage(const cv::Mat& mat);
 };
 #endif // MAINWINDOW_H

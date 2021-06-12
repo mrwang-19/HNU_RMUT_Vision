@@ -10,6 +10,11 @@ Camera::Camera(QObject *parent):QObject(parent=nullptr)
     pointer_=this;
 }
 
+Camera::~Camera()
+{
+    close();
+}
+
 bool Camera::open()
 {
     if(hDevice==nullptr&&videoFile==nullptr)
@@ -24,10 +29,24 @@ bool Camera::open()
             const char * tmp="1";
             stOpenParam.pszContent = (char*)tmp;
             status=GXOpenDevice(&stOpenParam, &hDevice);
-            return status;
+            return status == GX_STATUS_SUCCESS;
         }
     }
     return false;
+}
+bool Camera::close()
+{
+    stopCapture();
+    if(hDevice!=nullptr)
+    {
+        GXCloseDevice(hDevice);
+        hDevice = nullptr;
+    }
+    if(videoFile!=nullptr)
+    {
+        videoFile->release();
+        videoFile = nullptr;
+    }
 }
 
 bool Camera::open(String videoPath)
@@ -41,6 +60,11 @@ bool Camera::open(String videoPath)
         return true;
     }
     return false;
+}
+
+bool Camera::isOpened()
+{
+    return (hDevice!=nullptr||videoFile!=nullptr);
 }
 
 void GX_STDC Camera::OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame)
@@ -166,7 +190,20 @@ bool Camera::setWhiteBalanceMode(uint8_t whiteBalanceMode)
 {
     if(hDevice!=nullptr)
     {
-
+        switch (whiteBalanceMode) {
+        case 0:
+            //关闭自动白平衡
+            return GXSetEnum(hDevice,GX_ENUM_BALANCE_WHITE_AUTO,GX_BALANCE_WHITE_AUTO_OFF);
+            break;
+        case 1:
+            //持续自动白平衡
+            return GXSetEnum(hDevice,GX_ENUM_BALANCE_WHITE_AUTO,GX_BALANCE_WHITE_AUTO_CONTINUOUS);
+            break;
+        case 3:
+            //单次自动白平衡
+            return GXSetEnum(hDevice,GX_ENUM_BALANCE_WHITE_AUTO,GX_BALANCE_WHITE_AUTO_ONCE);
+            break;
+        }
     }
     return false;
 }

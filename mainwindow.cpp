@@ -25,13 +25,13 @@ MainWindow::MainWindow(QWidget *parent)
     pid_yaw.kp=ui->yawKpSpinBox->value();
     pid_yaw.ki=ui->yawKiSpinBox->value();
     pid_yaw.kd=ui->yawKdSpinBox->value();
-    angleSolver.setCameraParam("../HNU_RMUT_Version/camera_params.xml", 1);
+    angleSolver.setCameraParam("../camera_params.xml", 1);
     pointer_=this;
 }
 
 MainWindow::~MainWindow()
 {
-    if(hDevice!=nullptr)
+    if(cam.isOpened())
     {
         on_OpenButton_clicked();
         while (!processorHandler.isFinished()) {
@@ -40,113 +40,55 @@ MainWindow::~MainWindow()
     }
     delete ui;
 }
-/// 采集完成回调函数，每拍一帧就会在大恒SDK的采集线程中被调用一次
-/// \brief MainWindow::OnFrameCallbackFun
-/// \param pFrame 包含了刚采集的一帧的数据
-///
-void GX_STDC MainWindow::OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame)
-{
-    if (pFrame->status == GX_FRAME_STATUS_SUCCESS)
-    {
-        char *pRGB24Buf = new char[pFrame->nWidth * pFrame->nHeight * 3]; //输 出 图 像 RGB 数 据
-        if (pRGB24Buf == NULL)
-        {
-            return;
-        }
-            else
-        {
-            memset(pRGB24Buf,0,pFrame->nWidth * pFrame->nHeight * 3 * sizeof( char));
-            //缓 冲 区 初 始 化
-        }
-        DX_BAYER_CONVERT_TYPE cvtype = RAW2RGB_NEIGHBOUR3; //选 择 插 值 算 法
-        DX_PIXEL_COLOR_FILTER nBayerType = DX_PIXEL_COLOR_FILTER(BAYERBG);
-        //选 择 图 像 Bayer 格 式
-        bool bFlip = false;
-        VxInt32 DxStatus = DxRaw8toRGB24(pFrame->pImgBuf,pRGB24Buf,pFrame->nWidth,pFrame->nHeight,cvtype,nBayerType,bFlip);
-        if (DxStatus != DX_OK)
-        {
-            if (pRGB24Buf != NULL)
-            {
-                delete []pRGB24Buf;
-                pRGB24Buf = NULL;
-             }
-            return;
-        }
-        //发射信号，传输图片数据
-        emit pointer_->newImage(pRGB24Buf,pFrame->nHeight,pFrame->nWidth);
-    }
-    return;
-}
+
 
 void MainWindow::on_OpenButton_clicked()
 {
-    if(hDevice==nullptr)
+    if(!cam.isOpened())
     {
-        GX_OPEN_PARAM stOpenParam;
-        exposureTime=ui->exposureSpinBox->value();
-        width=ui->widthSpinBox->value();
-        height=ui->heightSpinBox->value();
-//        QString SN=ui->SNEdit->text();
-//        char *sn = new char[SN.length()];
-//        strcpy(sn,SN.toStdString().c_str());
-//        //    stOpenParam.openMode = GX_OPEN_SN;
-//        ////    stOpenParam.pszContent = sn;
-//        //    stOpenParam.pszContent = "KE0210020155";
-        uint32_t nDeviceNum=0;
-        auto status = GXUpdateDeviceList(&nDeviceNum, 1000);
-        if (status == GX_STATUS_SUCCESS&&nDeviceNum> 0)
+        if(cam.open())
         {
-            stOpenParam.accessMode = GX_ACCESS_EXCLUSIVE;
-            stOpenParam.openMode = GX_OPEN_INDEX;
-            const char * tmp="1";
-            stOpenParam.pszContent = (char*)tmp;
-            auto ststus=GXOpenDevice(&stOpenParam, &hDevice);
-            if(ststus==GX_STATUS_SUCCESS)
-            {
-                //初始化相机参数
-                cam_init();
-                //注册采集回调函数
-                GXRegisterCaptureCallback(hDevice, NULL,OnFrameCallbackFun);
-                //发送开采命令
-                GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_START);
-                //创建处理线程
-                processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value());
-                processor->moveToThread(&processorHandler);
-                connect(this,&MainWindow::newImage,processor,&ImageProcessor::onNewImage);
-                connect(this,&MainWindow::startRecording,processor,&ImageProcessor::startRecording);
-                connect(this,&MainWindow::stopRecording,processor,&ImageProcessor::stopRecording);
-                connect(&processorHandler,&QThread::finished,processor,&ImageProcessor::deleteLater);
-                processorHandler.start();
-                //创建收发线程
-                transceiver=new Transceiver(ui->serialNameEdit->text());
-                transceiver->moveToThread(&transceiverHandler);
-                connect(&transceiverHandler,&QThread::finished,transceiver,&ImageProcessor::deleteLater);
-                transceiverHandler.start();
-                //创建绘图线程
-                ui->chartPainter->moveToThread(&chartPainterHandler);
-                connect(processor,&ImageProcessor::newTarget,ui->chartPainter,&ChartPainter::onTarget);
-                chartPainterHandler.start();
-                //创建预测线程
-                predictor = new Predictor(processor,200);
-                connect(&predictorHandler,&QThread::finished,predictor,&Predictor::deleteLater);
-                connect(predictor,&Predictor::newPhi,ui->chartPainter,&ChartPainter::onPhi);
-                predictor->moveToThread(&predictorHandler);
-                predictorHandler.start();
-                //启动定时器
-                timerID=startTimer(33);
-                ui->OpenButton->setText("关闭");
-            }
+            //
+            exposureTime=ui->exposureSpinBox->value();
+            width=ui->widthSpinBox->value();
+            height=ui->heightSpinBox->value();
+            //初始化相机参数
+            cam_init();
+            //开采
+            cam.startCapture();
+            //创建处理线程
+            processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value());
+            processor->moveToThread(&processorHandler);
+            connect(&cam,static_cast<void (Camera::*)(char*,int,int)>(&Camera::newImage),processor,&ImageProcessor::onNewImage);
+            connect(this,&MainWindow::startRecording,processor,&ImageProcessor::startRecording);
+            connect(this,&MainWindow::stopRecording,processor,&ImageProcessor::stopRecording);
+            connect(&processorHandler,&QThread::finished,processor,&ImageProcessor::deleteLater);
+            processorHandler.start();
+            //创建收发线程
+            transceiver=new Transceiver(ui->serialNameEdit->text());
+            transceiver->moveToThread(&transceiverHandler);
+            connect(&transceiverHandler,&QThread::finished,transceiver,&ImageProcessor::deleteLater);
+            transceiverHandler.start();
+            //创建绘图线程
+            ui->chartPainter->moveToThread(&chartPainterHandler);
+            connect(processor,&ImageProcessor::newTarget,ui->chartPainter,&ChartPainter::onTarget);
+            chartPainterHandler.start();
+            //创建预测线程
+            predictor = new Predictor(processor,200);
+            connect(&predictorHandler,&QThread::finished,predictor,&Predictor::deleteLater);
+            connect(predictor,&Predictor::newPhi,ui->chartPainter,&ChartPainter::onPhi);
+            predictor->moveToThread(&predictorHandler);
+            predictorHandler.start();
+            //启动定时器
+            timerID=startTimer(33);
+            ui->OpenButton->setText("关闭");
         }
     }
     else
     {
         killTimer(timerID);
-        //发送停采命令
-        GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_STOP);
-        //关闭相机
-        GXCloseDevice(hDevice);
-        //删除相机句柄
-        hDevice=nullptr;
+        //
+        cam.close();
         //销毁绘图线程
         chartPainterHandler.quit();
         //销毁预测线程
@@ -182,22 +124,18 @@ void MainWindow::on_RecordButton_clicked()
 
 /**
  * @brief MainWindow::cam_init 初始化相机参数，在开采前调用（但本函数不开始采集）
- * @param hDevice 相机句柄
  */
 bool MainWindow::cam_init()
 {
-    //自动白平衡
-    auto status = GXSetEnum(hDevice,GX_ENUM_BALANCE_WHITE_AUTO,GX_BALANCE_WHITE_AUTO_CONTINUOUS);
+    bool status=true;
+    //连续自动白平衡
+    status&=cam.setExposureMode(1);
     //固定曝光时长
-    status &= GXSetEnum(hDevice, GX_ENUM_EXPOSURE_AUTO, GX_EXPOSURE_AUTO_OFF);
+    status&=cam.setExposureMode(0);
     //设置曝光时长
-    status &= GXSetFloat(hDevice, GX_FLOAT_EXPOSURE_TIME, exposureTime);
+    status&=cam.setExposureTime(exposureTime);
     //设置分辨率
-    status &= GXSetInt(hDevice, GX_INT_WIDTH, width);
-    status &= GXSetInt(hDevice, GX_INT_HEIGHT, height);
-    //设置偏移量，确保画面中心为相机中心
-    status &= GXSetInt(hDevice, GX_INT_OFFSET_X, (1280-width)/2);
-    status &= GXSetInt(hDevice, GX_INT_OFFSET_Y, (1024-height)/2);
+    status&=cam.setImgSize(width,height);
     return status;
 }
 /**

@@ -23,6 +23,8 @@ public:
     ~Camera();
     bool open();
     bool open(String videoPath);
+    bool close();
+    bool isOpened();
     bool startCapture();
     bool stopCapture();
     bool setImgSize(uint16_t width,uint16_t height);
@@ -36,7 +38,11 @@ private:
     int timerID;                            //定时器ID
     VideoCapture * videoFile=nullptr;
     double frameRate;
-    //相机采集回调函数
+
+    /**
+     * @brief OnFrameCallbackFun 采集完成回调函数，每拍一帧就会在大恒SDK的采集线程中被调用一次
+     * @param pFrame 包含了刚采集的一帧的数据
+     */
     static void GX_STDC OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame);
 
 protected:
