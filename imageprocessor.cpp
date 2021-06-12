@@ -17,14 +17,14 @@ ImageProcessor::ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate
     blueDecay(blueDecay)
 {
     qRegisterMetaType<Target>("Target");
-    orignalImage = new  Mat(height,width,CV_8UC3);
-    binaryImage = new Mat(height,width,CV_8UC1);
+//    orignalImage = new  Mat(height,width,CV_8UC3);
+//    binaryImage = new Mat(height,width,CV_8UC1);
 }
 ImageProcessor::~ImageProcessor()
 {
     processors.waitForDone();
-    delete orignalImage;
-    delete binaryImage;
+//    delete orignalImage;
+//    delete binaryImage;
 }
 /**
  * @brief pretreatment 预处理采集到的图像帧
@@ -214,8 +214,8 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width)
     //打印时间戳
     QDateTime dateTime = QDateTime::currentDateTime();
     // 字符串格式化
-    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
-    qDebug()<<QThread::currentThread()<<timestamp;
+//    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
+//    qDebug()<<QThread::currentThread()<<timestamp;
     uint64_t mills_timestamp=dateTime.toMSecsSinceEpoch();
     Mat frame=Mat(height,width,CV_8UC3);
     //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）
@@ -244,12 +244,10 @@ void ImageProcessor::startRecording(QString savePath)
     QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm");
     QString path=savePath+timestamp+".avi";
     QString path2=savePath+timestamp+".csv";
-//    char *p=new char[path2.length()];
-//    strcpy(p,path2.toStdString().data());
     csv_save=new std::ofstream(path2.toStdString(),std::ios::out);
     recorder=new VideoWriter;
     bool tmp = recorder->open(path.toStdString(),VideoWriter::fourcc('X','V','I','D'),frameRate,Size(width,height),true);
-    if(!tmp)
+    if(tmp)
     {
         recordingFlag=true;
     }

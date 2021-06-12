@@ -13,7 +13,7 @@ public:
     explicit ChartPainter(QWidget *parent = nullptr);
 public slots:
     void onTarget(Target target);
-    void onTao(double timestamp,float tao);
+    void onPhi(double timestamp,float phi);
 private:
     QTime timeStart = QTime::currentTime();
 

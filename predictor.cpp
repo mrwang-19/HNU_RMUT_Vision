@@ -6,13 +6,13 @@ Predictor::Predictor(ImageProcessor * processor,int samples,QObject *parent) :
     samples(samples),
     processor(processor)
 {
-    tao=(float)processor->tao/150;
+    tao=(float)processor->tao/processor->frameRate;
     // 配置求解器
-    // 这里有很多配置项可以填
-    options.linear_solver_type = ceres::DENSE_QR;  // 增量方程如何求解
-    options.minimizer_progress_to_stdout = false;   // 输出到cout
+    options.linear_solver_type = ceres::DENSE_QR;   // 增量方程如何求解
+    options.minimizer_progress_to_stdout = false;   // 不输出到控制台
     options.num_threads=3;
-    timerID=startTimer(30);
+    //启动定时器
+    timerID=startTimer(30ms);
 }
 
 //非线性拟合代价函数
@@ -32,10 +32,12 @@ struct CURVE_FITTING_COST
     }
     const double _x, _y;    // x,y数据
 };
+
 Predictor::~Predictor()
 {
     killTimer(timerID);
 }
+
 void Predictor::timerEvent(QTimerEvent*)
 {
     double _phi[1]={0.0};
@@ -69,12 +71,18 @@ void Predictor::timerEvent(QTimerEvent*)
             ceres::Solver::Summary summary;                // 优化信息
             ceres::Solve ( options,problem, &summary );  // 开始优化
 //            cout<<summary.BriefReport() <<endl;
-            phi=_phi[0];
-            emit newTao(startTimestamp/1000.0,_phi[0]);
+            //如果没有跳变则融合上次预测结果与实际时间
+            if(_phi[0]-last_phi<CV_PI)
+                phi=(_phi[0]+last_phi+0.0159235668789809)/2;
+            else
+                phi=_phi[0];
+            last_phi=phi;   //更新last_phi
+            emit newPhi(startTimestamp/1000.0,_phi[0]);
         }
         delete problem;
     }
 }
+
 Point2f Predictor::predictPoint(float predictTime)
 {
     Target currentTarget=processor->historyTarget.last();

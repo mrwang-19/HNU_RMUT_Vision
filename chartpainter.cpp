@@ -56,8 +56,8 @@ void ChartPainter::onTarget(Target target)
         xAxis->setRange(key, 8, Qt::AlignRight);
     }
 }
-void ChartPainter::onTao(double timestamp,float tao)
+void ChartPainter::onPhi(double timestamp,float phi)
 {
     double key = timeStart.msecsTo(QTime::currentTime())/1000.0;
-    graph(2)->addData(key , tao);
+    graph(2)->addData(key , phi);
 }

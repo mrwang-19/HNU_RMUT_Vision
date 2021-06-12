@@ -21,22 +21,23 @@ class Predictor : public QObject
 public:
     explicit Predictor(ImageProcessor * processor,int samples,QObject *parent = nullptr);
     ~Predictor();
-//    float predictTime;          //预测时间
+//    float predictTime;        //预测时间
     float tao;                  //观测时间
     int samples;                //样本数量
-    double phi;        //拟合得到的相位
+    double phi;                 //拟合得到的相位
+    double last_phi;            //上一次拟合得到的相位
     int timerID;                //定时器ID
-    uint64 startTimestamp;
+    uint64 startTimestamp;      //起始帧时间辍
     Point2f predictPoint(float predictTime);   //计算预测角度差；
 private:
-    ImageProcessor *processor;  //图像处理类
-    ceres::Problem *problem;     //Ceres库待求解问题
+    ImageProcessor *processor;      //图像处理类
+    ceres::Problem *problem;        //Ceres库待求解问题
     ceres::Solver::Options options;
 protected:
     void timerEvent(QTimerEvent *e);
 
 signals:
-    void newTao(double timestamp,float tao);
+    void newPhi(double timestamp,float phi);
 };
 
 #endif // PREDICTOR_H

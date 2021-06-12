@@ -67,7 +67,7 @@ public:
     * @param output distance  unit is mm
     */
     void getAngle(vector<Point2f> & contourPoints, Point2f centerPoint, ArmorType type, double & yaw, double & pitch, double & evaluateDistance);
-    //单纯小孔成像结算角版本
+    //单纯小孔成像解算角版本
     void getAngle(Point2f centerPoint, float & yaw, float & pitch);
     /**
     * @brief show debug information
