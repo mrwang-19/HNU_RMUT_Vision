@@ -2,6 +2,7 @@
 #define CAMERA_H
 
 #include <QObject>
+#include <iostream>
 
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"

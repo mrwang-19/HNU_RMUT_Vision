@@ -39,9 +39,11 @@ if(ANDROID)
     mainwindow.ui
   )
 else()
+  QT5_WRAP_UI(ui_FILES  mainwindow.ui)
   AUX_SOURCE_DIRECTORY(. DIR_SRCS)
   add_executable(RMUT_Version
     ${DIR_SRCS}
+    ${ui_FILES}
     qcustomplot/qcustomplot.cpp
     qcustomplot/qcustomplot.h
     Daheng_inc/DxImageProc.h

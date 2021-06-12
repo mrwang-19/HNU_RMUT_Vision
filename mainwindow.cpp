@@ -46,43 +46,53 @@ void MainWindow::on_OpenButton_clicked()
 {
     if(!cam.isOpened())
     {
-        if(cam.open())
+        if(!ui->checkBoxUseFile->isChecked())
         {
-            //
-            exposureTime=ui->exposureSpinBox->value();
-            width=ui->widthSpinBox->value();
-            height=ui->heightSpinBox->value();
-            //初始化相机参数
-            cam_init();
-            //开采
-            cam.startCapture();
-            //创建处理线程
-            processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value());
-            processor->moveToThread(&processorHandler);
-            connect(&cam,static_cast<void (Camera::*)(char*,int,int)>(&Camera::newImage),processor,&ImageProcessor::onNewImage);
-            connect(this,&MainWindow::startRecording,processor,&ImageProcessor::startRecording);
-            connect(this,&MainWindow::stopRecording,processor,&ImageProcessor::stopRecording);
-            connect(&processorHandler,&QThread::finished,processor,&ImageProcessor::deleteLater);
-            processorHandler.start();
-            //创建收发线程
-            transceiver=new Transceiver(ui->serialNameEdit->text());
-            transceiver->moveToThread(&transceiverHandler);
-            connect(&transceiverHandler,&QThread::finished,transceiver,&ImageProcessor::deleteLater);
-            transceiverHandler.start();
-            //创建绘图线程
-            ui->chartPainter->moveToThread(&chartPainterHandler);
-            connect(processor,&ImageProcessor::newTarget,ui->chartPainter,&ChartPainter::onTarget);
-            chartPainterHandler.start();
-            //创建预测线程
-            predictor = new Predictor(processor,200);
-            connect(&predictorHandler,&QThread::finished,predictor,&Predictor::deleteLater);
-            connect(predictor,&Predictor::newPhi,ui->chartPainter,&ChartPainter::onPhi);
-            predictor->moveToThread(&predictorHandler);
-            predictorHandler.start();
-            //启动定时器
-            timerID=startTimer(33);
-            ui->OpenButton->setText("关闭");
+            if(cam.open())
+            {
+                //获取设置参数
+                exposureTime=ui->exposureSpinBox->value();
+                width=ui->widthSpinBox->value();
+                height=ui->heightSpinBox->value();
+                //初始化相机参数
+                cam_init();
+            }
+            else
+                return;
         }
+        else
+        {
+            if(!cam.open(ui->videoPathEdit->text().toStdString()))
+                return;
+        }
+        //开采
+        cam.startCapture();
+        //创建处理线程
+        processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value());
+        processor->moveToThread(&processorHandler);
+        connect(&cam,static_cast<void (Camera::*)(char*,int,int)>(&Camera::newImage),processor,&ImageProcessor::onNewImage);
+        connect(this,&MainWindow::startRecording,processor,&ImageProcessor::startRecording);
+        connect(this,&MainWindow::stopRecording,processor,&ImageProcessor::stopRecording);
+        connect(&processorHandler,&QThread::finished,processor,&ImageProcessor::deleteLater);
+        processorHandler.start();
+        //创建收发线程
+        transceiver=new Transceiver(ui->serialNameEdit->text());
+        transceiver->moveToThread(&transceiverHandler);
+        connect(&transceiverHandler,&QThread::finished,transceiver,&ImageProcessor::deleteLater);
+        transceiverHandler.start();
+        //创建绘图线程
+        ui->chartPainter->moveToThread(&chartPainterHandler);
+        connect(processor,&ImageProcessor::newTarget,ui->chartPainter,&ChartPainter::onTarget);
+        chartPainterHandler.start();
+        //创建预测线程
+        predictor = new Predictor(processor,200);
+        connect(&predictorHandler,&QThread::finished,predictor,&Predictor::deleteLater);
+        connect(predictor,&Predictor::newPhi,ui->chartPainter,&ChartPainter::onPhi);
+        predictor->moveToThread(&predictorHandler);
+        predictorHandler.start();
+        //启动定时器
+        timerID=startTimer(33);
+        ui->OpenButton->setText("关闭");
     }
     else
     {

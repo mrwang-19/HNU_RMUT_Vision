@@ -71,10 +71,10 @@
       <x>740</x>
       <y>0</y>
       <width>271</width>
-      <height>526</height>
+      <height>581</height>
      </rect>
     </property>
-    <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
+    <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
      <property name="leftMargin">
       <number>6</number>
      </property>
@@ -87,8 +87,38 @@
      <property name="bottomMargin">
       <number>6</number>
      </property>
-     <item row="10" column="1">
-      <widget class="QDoubleSpinBox" name="yawKpSpinBox">
+     <item row="18" column="1">
+      <widget class="QDoubleSpinBox" name="hBaisSpinBox">
+       <property name="minimum">
+        <double>-10.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>15.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.500000000000000</double>
+       </property>
+       <property name="value">
+        <double>10.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="0">
+      <widget class="QLabel" name="label_20">
+       <property name="text">
+        <string>pit_kp</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>SN</string>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="1">
+      <widget class="QDoubleSpinBox" name="pitKiSpinBox">
        <property name="decimals">
         <number>6</number>
        </property>
@@ -99,51 +129,39 @@
         <double>0.001000000000000</double>
        </property>
        <property name="value">
-        <double>0.015000000000000</double>
+        <double>0.002000000000000</double>
        </property>
       </widget>
      </item>
-     <item row="9" column="0">
-      <widget class="QLabel" name="label_9">
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="savePathEdit">
        <property name="text">
-        <string>波特率</string>
+        <string>/home/rm/视频/</string>
        </property>
       </widget>
      </item>
-     <item row="13" column="0">
-      <widget class="QLabel" name="label_20">
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_5">
        <property name="text">
-        <string>pit_kp</string>
+        <string>曝光时长</string>
        </property>
       </widget>
      </item>
-     <item row="7" column="0">
-      <spacer name="verticalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <property name="sizeType">
-        <enum>QSizePolicy::Maximum</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="3" column="1">
-      <widget class="QSpinBox" name="widthSpinBox">
-       <property name="minimum">
-        <number>640</number>
-       </property>
-       <property name="maximum">
-        <number>1280</number>
+     <item row="16" column="0">
+      <widget class="QLabel" name="label_19">
+       <property name="text">
+        <string>pit_kd</string>
        </property>
       </widget>
      </item>
-     <item row="15" column="1">
+     <item row="17" column="0">
+      <widget class="QLabel" name="label_22">
+       <property name="text">
+        <string>垂直偏置</string>
+       </property>
+      </widget>
+     </item>
+     <item row="16" column="1">
       <widget class="QDoubleSpinBox" name="pitKdSpinBox">
        <property name="decimals">
         <number>6</number>
@@ -156,87 +174,14 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_4">
-       <property name="text">
-        <string>宽度</string>
-       </property>
-      </widget>
-     </item>
-     <item row="11" column="1">
-      <widget class="QDoubleSpinBox" name="yawKiSpinBox">
-       <property name="decimals">
-        <number>6</number>
-       </property>
-       <property name="maximum">
-        <double>2.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.000100000000000</double>
-       </property>
-       <property name="value">
-        <double>0.002000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="1">
-      <widget class="QLineEdit" name="serialNameEdit">
-       <property name="text">
-        <string>ttyUSB0</string>
-       </property>
-      </widget>
-     </item>
-     <item row="16" column="1">
-      <widget class="QDoubleSpinBox" name="vBaisSpinBox">
-       <property name="decimals">
-        <number>6</number>
-       </property>
-       <property name="maximum">
-        <double>300.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.500000000000000</double>
-       </property>
-       <property name="value">
-        <double>85.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="14" column="0">
+     <item row="15" column="0">
       <widget class="QLabel" name="label_21">
        <property name="text">
         <string>pit_ki</string>
        </property>
       </widget>
      </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="label_6">
-       <property name="text">
-        <string>高度</string>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="1">
-      <widget class="QDoubleSpinBox" name="blueDecaySpinBox">
-       <property name="maximum">
-        <double>1.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.050000000000000</double>
-       </property>
-       <property name="value">
-        <double>0.250000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="15" column="0">
-      <widget class="QLabel" name="label_19">
-       <property name="text">
-        <string>pit_kd</string>
-       </property>
-      </widget>
-     </item>
-     <item row="12" column="1">
+     <item row="13" column="1">
       <widget class="QDoubleSpinBox" name="yawKdSpinBox">
        <property name="decimals">
         <number>6</number>
@@ -249,14 +194,20 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QLineEdit" name="SNEdit">
-       <property name="text">
-        <string>KE0210020155</string>
+     <item row="1" column="1">
+      <widget class="QSpinBox" name="exposureSpinBox">
+       <property name="minimum">
+        <number>1000</number>
+       </property>
+       <property name="maximum">
+        <number>2000000</number>
+       </property>
+       <property name="value">
+        <number>6600</number>
        </property>
       </widget>
      </item>
-     <item row="9" column="1">
+     <item row="10" column="1">
       <widget class="QComboBox" name="bundRateComboBox">
        <item>
         <property name="text">
@@ -275,34 +226,98 @@
        </item>
       </widget>
      </item>
-     <item row="8" column="0">
-      <widget class="QLabel" name="label_8">
+     <item row="5" column="0">
+      <widget class="QLabel" name="label_6">
        <property name="text">
-        <string>串口</string>
+        <string>高度</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QSpinBox" name="exposureSpinBox">
-       <property name="minimum">
-        <number>1000</number>
-       </property>
-       <property name="maximum">
-        <number>2000000</number>
-       </property>
-       <property name="value">
-        <number>6600</number>
+     <item row="13" column="0">
+      <widget class="QLabel" name="label_17">
+       <property name="text">
+        <string>yaw_kd</string>
        </property>
       </widget>
      </item>
-     <item row="11" column="0">
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>保存路径</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="0">
+      <spacer name="verticalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Maximum</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="12" column="0">
       <widget class="QLabel" name="label_15">
        <property name="text">
         <string>yaw_ki</string>
        </property>
       </widget>
      </item>
-     <item row="13" column="1">
+     <item row="7" column="1">
+      <widget class="QDoubleSpinBox" name="blueDecaySpinBox">
+       <property name="maximum">
+        <double>1.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.050000000000000</double>
+       </property>
+       <property name="value">
+        <double>0.250000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="0">
+      <widget class="QLabel" name="label_9">
+       <property name="text">
+        <string>波特率</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QSpinBox" name="heightSpinBox">
+       <property name="minimum">
+        <number>480</number>
+       </property>
+       <property name="maximum">
+        <number>1024</number>
+       </property>
+       <property name="value">
+        <number>800</number>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>宽度</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="SNEdit">
+       <property name="text">
+        <string>KE0210020155</string>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="1">
       <widget class="QDoubleSpinBox" name="pitKpSpinBox">
        <property name="decimals">
         <number>6</number>
@@ -318,21 +333,93 @@
        </property>
       </widget>
      </item>
-     <item row="12" column="0">
-      <widget class="QLabel" name="label_17">
+     <item row="9" column="1">
+      <widget class="QLineEdit" name="serialNameEdit">
        <property name="text">
-        <string>yaw_kd</string>
+        <string>ttyUSB0</string>
        </property>
       </widget>
      </item>
-     <item row="6" column="0">
+     <item row="9" column="0">
+      <widget class="QLabel" name="label_8">
+       <property name="text">
+        <string>串口</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0">
       <widget class="QLabel" name="label_10">
        <property name="text">
         <string>蓝色衰减</string>
        </property>
       </widget>
      </item>
-     <item row="5" column="0">
+     <item row="12" column="1">
+      <widget class="QDoubleSpinBox" name="yawKiSpinBox">
+       <property name="decimals">
+        <number>6</number>
+       </property>
+       <property name="maximum">
+        <double>2.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.000100000000000</double>
+       </property>
+       <property name="value">
+        <double>0.002000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QSpinBox" name="widthSpinBox">
+       <property name="minimum">
+        <number>640</number>
+       </property>
+       <property name="maximum">
+        <number>1280</number>
+       </property>
+      </widget>
+     </item>
+     <item row="11" column="0">
+      <widget class="QLabel" name="label_14">
+       <property name="text">
+        <string>yaw_kp</string>
+       </property>
+      </widget>
+     </item>
+     <item row="17" column="1">
+      <widget class="QDoubleSpinBox" name="vBaisSpinBox">
+       <property name="decimals">
+        <number>6</number>
+       </property>
+       <property name="maximum">
+        <double>300.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.500000000000000</double>
+       </property>
+       <property name="value">
+        <double>85.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="11" column="1">
+      <widget class="QDoubleSpinBox" name="yawKpSpinBox">
+       <property name="decimals">
+        <number>6</number>
+       </property>
+       <property name="maximum">
+        <double>50.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.001000000000000</double>
+       </property>
+       <property name="value">
+        <double>0.015000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="0">
       <spacer name="verticalSpacer">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
@@ -348,97 +435,24 @@
        </property>
       </spacer>
      </item>
-     <item row="4" column="1">
-      <widget class="QSpinBox" name="heightSpinBox">
-       <property name="minimum">
-        <number>480</number>
-       </property>
-       <property name="maximum">
-        <number>1024</number>
-       </property>
-       <property name="value">
-        <number>800</number>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>SN</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>保存路径</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QLineEdit" name="savePathEdit">
-       <property name="text">
-        <string>/home/rm/视频/</string>
-       </property>
-      </widget>
-     </item>
-     <item row="14" column="1">
-      <widget class="QDoubleSpinBox" name="pitKiSpinBox">
-       <property name="decimals">
-        <number>6</number>
-       </property>
-       <property name="maximum">
-        <double>50.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.001000000000000</double>
-       </property>
-       <property name="value">
-        <double>0.002000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_5">
-       <property name="text">
-        <string>曝光时长</string>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="0">
-      <widget class="QLabel" name="label_14">
-       <property name="text">
-        <string>yaw_kp</string>
-       </property>
-      </widget>
-     </item>
-     <item row="17" column="1">
-      <widget class="QDoubleSpinBox" name="hBaisSpinBox">
-       <property name="minimum">
-        <double>-10.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>15.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.500000000000000</double>
-       </property>
-       <property name="value">
-        <double>10.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="16" column="0">
-      <widget class="QLabel" name="label_22">
-       <property name="text">
-        <string>垂直偏置</string>
-       </property>
-      </widget>
-     </item>
-     <item row="17" column="0">
+     <item row="18" column="0">
       <widget class="QLabel" name="label_23">
        <property name="text">
         <string>水平偏置</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_24">
+       <property name="text">
+        <string>视频路径</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="videoPathEdit">
+       <property name="text">
+        <string>/home/rm/视频/</string>
        </property>
       </widget>
      </item>
@@ -615,32 +629,6 @@
      </item>
     </layout>
    </widget>
-   <widget class="QCheckBox" name="checkBoxFollowArmor">
-    <property name="geometry">
-     <rect>
-      <x>390</x>
-      <y>530</y>
-      <width>141</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>跟随目标装甲板</string>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="checkBoxFollowCenter">
-    <property name="geometry">
-     <rect>
-      <x>390</x>
-      <y>500</y>
-      <width>151</width>
-      <height>29</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>跟随能量机关中心</string>
-    </property>
-   </widget>
    <widget class="ChartPainter" name="chartPainter" native="true">
     <property name="geometry">
      <rect>
@@ -651,13 +639,45 @@
      </rect>
     </property>
    </widget>
+   <widget class="QWidget" name="verticalLayoutWidget_3">
+    <property name="geometry">
+     <rect>
+      <x>380</x>
+      <y>480</y>
+      <width>160</width>
+      <height>101</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QCheckBox" name="checkBoxFollowCenter">
+       <property name="text">
+        <string>跟随能量机关中心</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="checkBoxFollowArmor">
+       <property name="text">
+        <string>跟随目标装甲板</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="checkBoxUseFile">
+       <property name="text">
+        <string>使用视频代替相机</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
    <zorder>chartPainter</zorder>
    <zorder>verticalLayoutWidget</zorder>
    <zorder>gridLayoutWidget</zorder>
    <zorder>verticalLayoutWidget_2</zorder>
    <zorder>gridLayoutWidget_2</zorder>
-   <zorder>checkBoxFollowArmor</zorder>
-   <zorder>checkBoxFollowCenter</zorder>
+   <zorder>verticalLayoutWidget_3</zorder>
   </widget>
  </widget>
  <customwidgets>

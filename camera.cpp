@@ -34,6 +34,26 @@ bool Camera::open()
     }
     return false;
 }
+
+bool Camera::open(String videoPath)
+{
+    if(hDevice==nullptr&&videoFile==nullptr)
+    {
+        videoFile=new VideoCapture();
+        videoFile->open("/home/null/1.avi");
+        if(!videoFile->isOpened())
+        {
+            cout<<"open video faild!"<<endl;
+            delete videoFile;
+            videoFile = nullptr;
+            return false;
+        }
+        frameRate=videoFile->get(CAP_PROP_FPS);
+        return true;
+    }
+    return false;
+}
+
 bool Camera::close()
 {
     stopCapture();
@@ -47,19 +67,7 @@ bool Camera::close()
         videoFile->release();
         videoFile = nullptr;
     }
-}
-
-bool Camera::open(String videoPath)
-{
-    if(hDevice==nullptr&&videoFile==nullptr)
-    {
-        videoFile=new VideoCapture(videoPath);
-        if(!videoFile->isOpened())
-            return false;
-        frameRate=videoFile->get(CAP_PROP_FPS);
-        return true;
-    }
-    return false;
+    return true;
 }
 
 bool Camera::isOpened()
