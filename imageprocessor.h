@@ -63,6 +63,7 @@ public slots:
     void startRecording(QString savePath);
     void stopRecording();
     void onNewImage(char* img_data,int height,int width);
+    void onNewImage(Mat Frame);
 private:
     //函数
     Mat pretreatment(Mat frame);

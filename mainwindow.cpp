@@ -59,18 +59,27 @@ void MainWindow::on_OpenButton_clicked()
             }
             else
                 return;
+            //开采
+            cam.startCapture();
+            //创建处理线程
+            processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value());
+            processor->moveToThread(&processorHandler);
+            connect(&cam,static_cast<void (Camera::*)(char*,int,int)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(char *,int,int)>(&ImageProcessor::onNewImage));
         }
         else
         {
             if(!cam.open(ui->videoPathEdit->text().toStdString()))
                 return;
+            height=cam.getHeight();
+            width=cam.getWidth();
+            //开采
+            cam.startCapture();
+            //创建处理线程
+            processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value());
+            processor->moveToThread(&processorHandler);
+            connect(&cam,static_cast<void (Camera::*)(Mat)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(Mat)>(&ImageProcessor::onNewImage));
         }
-        //开采
-        cam.startCapture();
-        //创建处理线程
-        processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value());
-        processor->moveToThread(&processorHandler);
-        connect(&cam,static_cast<void (Camera::*)(char*,int,int)>(&Camera::newImage),processor,&ImageProcessor::onNewImage);
+
         connect(this,&MainWindow::startRecording,processor,&ImageProcessor::startRecording);
         connect(this,&MainWindow::stopRecording,processor,&ImageProcessor::stopRecording);
         connect(&processorHandler,&QThread::finished,processor,&ImageProcessor::deleteLater);

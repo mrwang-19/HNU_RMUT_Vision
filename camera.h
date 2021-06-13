@@ -16,8 +16,7 @@ using namespace cv;
 using namespace std;
 Q_DECLARE_METATYPE(Mat)
 
-class Camera : public QObject
-{
+class Camera : public QObject {
     Q_OBJECT
 public:
     Camera(QObject *parent=nullptr);
@@ -32,6 +31,8 @@ public:
     bool setExposureTime(uint32_t exposureTime);
     bool setExposureMode(uint8_t exposureMode);
     bool setWhiteBalanceMode(uint8_t whiteBalanceMode);
+    uint16_t getHeight();
+    uint16_t getWidth();
 
 private:
     static Camera * pointer_;               //为在静态函数中发射信号而创建的指针

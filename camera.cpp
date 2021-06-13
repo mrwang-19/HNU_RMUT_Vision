@@ -40,7 +40,7 @@ bool Camera::open(String videoPath)
     if(hDevice==nullptr&&videoFile==nullptr)
     {
         videoFile=new VideoCapture();
-        videoFile->open("/home/null/1.avi");
+        videoFile->open(videoPath);
         if(!videoFile->isOpened())
         {
             cout<<"open video faild!"<<endl;
@@ -166,6 +166,22 @@ bool Camera::setImgSize(uint16_t width,uint16_t height)
         return status;
     }
     return false;
+}
+
+uint16_t Camera::getHeight()
+{
+    if(videoFile!= nullptr)
+        return (uint16_t)videoFile->get(CAP_PROP_FRAME_HEIGHT);
+    else
+        return 0;
+}
+
+uint16_t Camera::getWidth()
+{
+    if(videoFile!= nullptr)
+        return (uint16_t)videoFile->get(CAP_PROP_FRAME_WIDTH);
+    else
+        return 0;
 }
 
 bool Camera::setExposureTime(uint32_t exposureTime)

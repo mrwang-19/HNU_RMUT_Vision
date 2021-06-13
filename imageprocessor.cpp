@@ -234,6 +234,20 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width)
     //删除帧数据
     delete [] img_data;
 }
+void ImageProcessor::onNewImage(Mat frame)
+{
+    //打印时间戳
+    QDateTime dateTime = QDateTime::currentDateTime();
+    // 字符串格式化
+//    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
+//    qDebug()<<QThread::currentThread()<<timestamp;
+    uint64_t mills_timestamp=dateTime.toMSecsSinceEpoch();
+    cvtColor(frame,frame,COLOR_BGR2RGB);
+    frameLock.lock();
+    frameQueue.append(frame);
+    frameLock.unlock();
+    QFuture<void> future = QtConcurrent::run(&processors,this,&ImageProcessor::detectTarget,mills_timestamp);
+}
 /**
  * @brief ImageProcessor::startRecording    打开录制
  * @param savePath  保存路径（文件夹）
