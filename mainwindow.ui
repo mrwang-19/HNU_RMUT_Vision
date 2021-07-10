@@ -652,14 +652,14 @@
      <item>
       <widget class="QCheckBox" name="checkBoxFollowCenter">
        <property name="text">
-        <string>跟随能量机关中心</string>
+        <string>PID闭环</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QCheckBox" name="checkBoxFollowArmor">
        <property name="text">
-        <string>跟随目标装甲板</string>
+        <string>小孔成像解算</string>
        </property>
       </widget>
      </item>
@@ -669,7 +669,7 @@
         <string>使用视频代替相机</string>
        </property>
        <property name="checked">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
       </widget>
      </item>
