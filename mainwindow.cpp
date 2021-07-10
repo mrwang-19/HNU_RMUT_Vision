@@ -27,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent)
     pid_yaw.kd=ui->yawKdSpinBox->value();
     angleSolver.setCameraParam("../camera_params.xml", 1);
     pointer_=this;
+    this->move(100,100);
 }
 
 MainWindow::~MainWindow()
@@ -75,7 +76,7 @@ void MainWindow::on_OpenButton_clicked()
             //开采
             cam.startCapture();
             //创建处理线程
-            processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value());
+            processor=new ImageProcessor(height,width,(uint16_t)cam.getFrameRate(),ui->blueDecaySpinBox->value());
             processor->moveToThread(&processorHandler);
             connect(&cam,static_cast<void (Camera::*)(Mat)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(Mat)>(&ImageProcessor::onNewImage));
         }
@@ -94,7 +95,7 @@ void MainWindow::on_OpenButton_clicked()
         connect(processor,&ImageProcessor::newTarget,ui->chartPainter,&ChartPainter::onTarget);
         chartPainterHandler.start();
         //创建预测线程
-        predictor = new Predictor(processor,200);
+        predictor = new Predictor(processor,150);
         connect(&predictorHandler,&QThread::finished,predictor,&Predictor::deleteLater);
         connect(predictor,&Predictor::newPhi,ui->chartPainter,&ChartPainter::onPhi);
         predictor->moveToThread(&predictorHandler);
@@ -175,15 +176,16 @@ void MainWindow::timerEvent(QTimerEvent*)
                 //打印时间戳
                 QDateTime dateTime = QDateTime::currentDateTime();
 //                // 字符串格式化
-//                QString timestamp = dateTime.toString("hh:mm:ss.zzz");
+                QString timestamp = dateTime.toString("hh:mm:ss.zzz");
 //                qDebug()<<QThread::currentThread()<<timestamp;
-                float timePassed=(dateTime.toMSecsSinceEpoch()-lastTimestamp)/1000.0;
+                float timePassed=((float)(dateTime.toMSecsSinceEpoch()-lastTimestamp))/1000.0;
                 if(timePassed>1.5)
                 {
                     lastTimestamp=dateTime.currentDateTime().toMSecsSinceEpoch();
                     transceiver->sendFrame.shootCommand=1;
                 }
-                p=predictor->predictPoint(1.5);
+                p=predictor->predictPoint(1.5-timePassed);
+//                p=predictor->predictPoint(2.0);
                 Mat img;
                 processor->frameQueue.last().copyTo(img);
                 circle(img,tmp.center,15,Scalar(0,255,0),-1);

@@ -57,11 +57,12 @@ Mat ImageProcessor::pretreatment(Mat frame)
 float myArctan(Point2f p)
 {
     float angle = atan2(p.y,p.x);
-    if (p.y < 0.0)
-    {
-        angle = (CV_2PI + angle);
-    }
-    return CV_2PI-angle;
+    return fmod(CV_2PI-angle,CV_2PI);
+//    if (p.y < 0.0)
+//    {
+//        angle = (CV_2PI + angle);
+//    }
+//    return CV_2PI-angle;
 }
 
 /**
@@ -74,13 +75,16 @@ float myArctan(Point2f p)
 void ImageProcessor::detectTarget(uint64_t timestamp)
 {
     static uint64 frame_count=0;
-    Mat binaryImage;
+    Mat original,binaryImage;
     Target target;
     target.index=frame_count;
     target.timestamp=timestamp;
     frameLock.lock();
     if(frameQueue.size()>1)
-        binaryImage=pretreatment(frameQueue.takeFirst());
+    {
+        original=frameQueue.takeFirst();
+        binaryImage=pretreatment(original);
+    }
     else
     {
         frameLock.unlock();
@@ -95,7 +99,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
     findContours(binaryImage,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
     //    drawContours(fliped,contours,max,Scalar(0,255,0),5);
     //    drawContours(fliped,contours,min,Scalar(255,0,0),5);
-    float max_area=0.0,min_area=10000.0;
+    float max_area=0.0,max_rito=2.0;
     if(contours.size()<2)
     {
         target.center=Point2f(width/2,height/2);
@@ -107,41 +111,25 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
         for(int i=0;i<(int)contours.size();i++)
         {
             auto rect=minAreaRect(contours[i]);
-            auto tmp = rect.size.area();
-//            qDebug()<<tmp;
-            if(tmp>max_area)
+            auto area = contourArea(contours[i]);
+            if(area>50)
             {
-                max_area=tmp;
-                target.armorRect=rect;
+                auto tmp = rect.size.area();
+                if(tmp>max_area)
+                {
+                    max_area=tmp;
+                    target.armorRect=rect;
+                }
+                Point2f center;
+                float r;
+                minEnclosingCircle(contours[i],center,r);
+                tmp= abs(1-area/(CV_2PI*r*r));
+                if(tmp<max_rito)
+                {
+                    max_rito=tmp;
+                    target.center=center;
+                }
             }
-            if(tmp<min_area)
-            {
-                min_area=tmp;
-                target.center=rect.center;
-            }
-            /*
-            qDebug()<<i<<":"<<rect.size.aspectRatio();
-            if(abs(rect.size.aspectRatio()-0.6)<0.5)
-            {
-                max_1=i;
-            }
-            else {
-                max_2=i;
-            }
-            if()
-            minEnclosingCircle(contours[i],center,radius);
-            float r=contourArea(contours[i])/(rect.area());
-            if(r>rate_1)
-            {
-                rate_1=r;
-                max_1=i;
-            }
-            r=contourArea(contours[i])/(PI*radius*radius);
-            if(r>rate_2)
-            {
-                rate_1=r;
-                max_2=i;
-            }*/
         }
         //计算目标装甲板中心的像素坐标
         target.armorCenter=target.armorRect.center;
@@ -149,11 +137,29 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
         target.normalizedCenter=Point2f(target.armorCenter.x-target.center.x,target.armorCenter.y-target.center.y);
         //计算目标装甲板中心相对于能量机关中心x轴的夹角
         target.armorAngle=myArctan(target.normalizedCenter);
+        int index=historyTarget.size()-1;
+        Target before;
+        if(index>=0)
+            before=historyTarget[index];
+        if(target.center.x-before.center.x>100)
+        {
+            Mat debug=original.clone();
+            circle(debug,target.center,15,Scalar(0,255,0),-1);
+            imwrite(to_string(rand())+".bmp",debug);
+        }
+//        if(index>=0)
+//        {
+//            before=historyTarget[index];
+//            if(fabs(before.armorAngle-target.armorAngle)<3.0)
+//            {
+//                target.armorAngle=0.5*target.armorAngle+0.5*before.armorAngle;
+//            }
+//        }
         //计算角度差
-        int index=historyTarget.size()+1-tao;
+        index=historyTarget.size()-tao-1;
         if(index>=0)
         {
-            Target before=historyTarget[index];
+            before=historyTarget[index];
             if(before.hasTarget)
             {
                 //顺时针旋转
@@ -174,13 +180,13 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                 //逆时针旋转
                 else
                 {
-                    //如果前tao帧的角度比当前帧小
+                    //如果前tao帧的角度比当前帧小,则用当前角度减去前τ帧的角度
                     if(before.armorAngle<target.armorAngle)
                     {
                         target.angleDifference=target.armorAngle-before.armorAngle;
 //                        qDebug()<<before.armorAngle<<" "<<target.armorAngle<<" "<<target.angleDifference;
                     }
-                    //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）
+                    //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）,则用前τ帧的角度减去当前角度
                     else
                     {
                         //角度差即为当前角度减去前tao帧的角度
@@ -196,7 +202,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
 
     historyLock.lock();
     historyTarget.append(target);
-    //TO—DO 确定历史长度
+    //TODO 确定历史长度,暂定500组
     if(historyTarget.size()>500)
         historyTarget.pop_front();//移除最早的数据
     historyLock.unlock();

@@ -30,9 +30,11 @@ public:
     bool setImgSize(uint16_t width,uint16_t height);
     bool setExposureTime(uint32_t exposureTime);
     bool setExposureMode(uint8_t exposureMode);
+    bool setFrameRate(float fps);
     bool setWhiteBalanceMode(uint8_t whiteBalanceMode);
     uint16_t getHeight();
     uint16_t getWidth();
+    float getFrameRate();
 
 private:
     static Camera * pointer_;               //为在静态函数中发射信号而创建的指针

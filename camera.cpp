@@ -124,10 +124,10 @@ bool Camera::startCapture()
     if(hDevice!=nullptr)
     {
         //注册采集回调
-        auto status=GXRegisterCaptureCallback(hDevice, NULL,OnFrameCallbackFun);
+        bool status=GXRegisterCaptureCallback(hDevice, NULL,OnFrameCallbackFun);
         //发送开采命令
-        status=GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_START);
-        return status;
+        status|=GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_START);
+        return !status;
     }
     else if (videoFile!=nullptr)
     {
@@ -158,12 +158,12 @@ bool Camera::setImgSize(uint16_t width,uint16_t height)
     if(hDevice!=nullptr)
     {
         //设置分辨率
-        auto status = GXSetInt(hDevice, GX_INT_WIDTH, width);
-        status &= GXSetInt(hDevice, GX_INT_HEIGHT, height);
+        bool status = GXSetInt(hDevice, GX_INT_WIDTH, width);
+        status |= GXSetInt(hDevice, GX_INT_HEIGHT, height);
         //设置偏移量，确保画面中心为相机中心
-        status &= GXSetInt(hDevice, GX_INT_OFFSET_X, (1280-width)/2);
-        status &= GXSetInt(hDevice, GX_INT_OFFSET_Y, (1024-height)/2);
-        return status;
+        status |= GXSetInt(hDevice, GX_INT_OFFSET_X, (1280-width)/2);
+        status |= GXSetInt(hDevice, GX_INT_OFFSET_Y, (1024-height)/2);
+        return !status;
     }
     return false;
 }
@@ -210,6 +210,29 @@ bool Camera::setExposureMode(uint8_t exposureMode)
     }
     return false;
 }
+
+bool Camera::setFrameRate(float fps)
+{
+    bool status = false;
+    if(hDevice!=nullptr)
+    {
+        //使能采集帧率调节模式
+        status |= GXSetEnum(hDevice, GX_ENUM_ACQUISITION_FRAME_RATE_MODE ,
+                           GX_ACQUISITION_FRAME_RATE_MODE_ON);
+        //设置采集帧率,假设设置为 10.0,用户按照实际需求设置此值
+        status |= GXSetFloat(hDevice, GX_FLOAT_ACQUISITION_FRAME_RATE, fps);
+        if(!status)
+            frameRate=fps;
+        return !status;
+    }
+    return status;
+}
+
+float Camera::getFrameRate()
+{
+    return frameRate;
+}
+
 bool Camera::setWhiteBalanceMode(uint8_t whiteBalanceMode)
 {
     if(hDevice!=nullptr)

@@ -13,9 +13,9 @@ public:
     explicit ChartPainter(QWidget *parent = nullptr);
 public slots:
     void onTarget(Target target);
-    void onPhi(double timestamp,float phi);
+    void onPhi(uint64 timestamp,float phi);
 private:
-    QTime timeStart = QTime::currentTime();
+    uint64 timeStart = QDateTime::currentDateTime().toMSecsSinceEpoch();
 
 signals:
 

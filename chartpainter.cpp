@@ -20,15 +20,16 @@ ChartPainter::ChartPainter(QWidget *parent) : QCustomPlot(parent)
     graph(1)->setPen(QPen(QColor(255, 110, 40)));
     graph(1)->setLineStyle(QCPGraph::lsNone);
     graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
-    addGraph(); // blue line
-    graph(2)->setPen(QPen(QColor(40, 255, 110)));
+    addGraph(); // green line
+    graph(2)->setPen(QPen(QColor(0, 0, 0)));
     graph(2)->setLineStyle(QCPGraph::lsNone);
     graph(2)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
     QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
-    timeTicker->setTimeFormat("%h:%m:%s");
+    timeTicker->setTimeFormat("%m:%s");
+    timeTicker->setTickCount(10);
     xAxis->setTicker(timeTicker);
     axisRect()->setupFullAxesBox();
-    yAxis->setRange(-1.2, 1.2);
+    yAxis->setRange(0, CV_2PI);
 
     // make left and bottom axes transfer their ranges to right and top axes:
     connect(xAxis, SIGNAL(rangeChanged(QCPRange)), xAxis2, SLOT(setRange(QCPRange)));
@@ -40,12 +41,13 @@ void ChartPainter::onTarget(Target target)
     if(target.hasTarget)
     {
         // calculate two new data points:
-        double key = timeStart.msecsTo(QTime::currentTime())/1000.0; // time elapsed since start of demo, in seconds
+        double key = (target.timestamp-timeStart)/1000.0; // time elapsed since start of demo, in seconds
         static double lastPointKey = 0;
         if (key-lastPointKey > 0.002) // at most add point every 2 ms
         {
           // add data to lines:
           graph(0)->addData(key, target.armorAngle);
+//            graph(0)->addData(key-0.5, target.armorAngle);
           graph(1)->addData(key, target.angleDifference);
           // rescale value (vertical) axis to fit the current data:
           graph(0)->rescaleValueAxis();
@@ -56,8 +58,8 @@ void ChartPainter::onTarget(Target target)
         xAxis->setRange(key, 8, Qt::AlignRight);
     }
 }
-void ChartPainter::onPhi(double timestamp,float phi)
+void ChartPainter::onPhi(uint64 timestamp,float phi)
 {
-    double key = timeStart.msecsTo(QTime::currentTime())/1000.0;
+    double key = (timestamp-timeStart)/1000.0;
     graph(2)->addData(key , phi);
 }
