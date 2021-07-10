@@ -6,7 +6,6 @@
 #include <QDebug>
 #include <vector>
 
-//202-4-24
 using namespace cv;
 using namespace std;
 
