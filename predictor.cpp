@@ -123,3 +123,4 @@ Point2f Predictor::predictPoint(float predictTime)
     tmp.y=y*cos(predictAngleDifference)+x*sin(predictAngleDifference);
     return currentTarget.center+tmp;
 }
+
