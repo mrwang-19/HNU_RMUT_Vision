@@ -178,13 +178,14 @@ void MainWindow::timerEvent(QTimerEvent*)
 //                QString timestamp = dateTime.toString("hh:mm:ss.zzz");
 //                qDebug()<<QThread::currentThread()<<timestamp;
                 float timePassed=((float)(dateTime.toMSecsSinceEpoch()-lastTimestamp))/1000.0;
-                if(timePassed>2)
+                float predictTime=ui->predictTimeSpinBox->value();
+                if(timePassed>predictTime)
                 {
                     lastTimestamp=dateTime.currentDateTime().toMSecsSinceEpoch();
                 }
-                if(timePassed>1.9)
+                if(timePassed>(predictTime-0.1))
                     transceiver->sendFrame.shootCommand=1;
-                p=predictor->predictPoint(2.0-timePassed);
+                p=predictor->predictPoint(predictTime-timePassed);
 //                p=predictor->predictPoint(0.1);
                 Mat img;
                 processor->frameQueue.last().copyTo(img);
@@ -192,9 +193,7 @@ void MainWindow::timerEvent(QTimerEvent*)
                 circle(img,tmp.armorCenter,15,Scalar(255,0,0),-1);
                 circle(img,p,15,Scalar(255,255,0),-1);
                 QImage ori=QImage((const uchar*)img.data,width,height,QImage::Format_RGB888);
-//                QImage prc=QImage((const uchar*)processor->binaryImage->data,width,height,QImage::Format_Indexed8);
                 ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
-//                ui->ProcessedImage->setPixmap(QPixmap::fromImage(prc));
             }
             //刷新目标信息
             if(tmp.hasTarget)
