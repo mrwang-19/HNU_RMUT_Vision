@@ -73,7 +73,7 @@ void Predictor::timerEvent(QTimerEvent*)
                 );
 //            }
         }
-        cout<<endl;
+//        cout<<endl;
 //            qDebug()<<"count:"<<count;
         //有效样本足够多才能进行拟合
 //        if(count>samples-10)
@@ -121,5 +121,5 @@ Point2f Predictor::predictPoint(float predictTime)
         predictAngleDifference=-predictAngleDifference;
     tmp.x=x*cos(predictAngleDifference)-y*sin(predictAngleDifference);
     tmp.y=y*cos(predictAngleDifference)+x*sin(predictAngleDifference);
-    return startTarget.center+tmp;
+    return currentTarget.center+tmp;
 }

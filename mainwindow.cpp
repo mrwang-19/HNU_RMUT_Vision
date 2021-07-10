@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     pid_yaw.kp=ui->yawKpSpinBox->value();
     pid_yaw.ki=ui->yawKiSpinBox->value();
     pid_yaw.kd=ui->yawKdSpinBox->value();
-    angleSolver.setCameraParam("../camera_params.xml", 1);
+    angleSolver.setCameraParam("/home/rm/HNU_RMUT_Version/camera_params.xml", 1);
     pointer_=this;
     this->move(100,100);
 }
@@ -178,12 +178,13 @@ void MainWindow::timerEvent(QTimerEvent*)
                 QString timestamp = dateTime.toString("hh:mm:ss.zzz");
 //                qDebug()<<QThread::currentThread()<<timestamp;
                 float timePassed=((float)(dateTime.toMSecsSinceEpoch()-lastTimestamp))/1000.0;
-                if(timePassed>1.5)
+                if(timePassed>2)
                 {
                     lastTimestamp=dateTime.currentDateTime().toMSecsSinceEpoch();
-                    transceiver->sendFrame.shootCommand=1;
+                    if(timePassed>1.9)
+                        transceiver->sendFrame.shootCommand=1;
                 }
-                p=predictor->predictPoint(1.5-timePassed);
+                p=predictor->predictPoint(2.0-timePassed);
 //                p=predictor->predictPoint(2.0);
                 Mat img;
                 processor->frameQueue.last().copyTo(img);

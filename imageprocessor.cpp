@@ -99,7 +99,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
     findContours(binaryImage,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
     //    drawContours(fliped,contours,max,Scalar(0,255,0),5);
     //    drawContours(fliped,contours,min,Scalar(255,0,0),5);
-    float max_area=0.0,max_rito=2.0;
+    float max_area=2.0,max_rito=2.0;
     if(contours.size()<2)
     {
         target.center=Point2f(width/2,height/2);
@@ -114,8 +114,8 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
             auto area = contourArea(contours[i]);
             if(area>50)
             {
-                auto tmp = rect.size.area();
-                if(tmp>max_area)
+                auto tmp = abs(1-area/rect.size.area());
+                if(tmp<max_area&&area>1000)
                 {
                     max_area=tmp;
                     target.armorRect=rect;
@@ -141,12 +141,12 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
         Target before;
         if(index>=0)
             before=historyTarget[index];
-        if(target.center.x-before.center.x>100)
-        {
-            Mat debug=original.clone();
-            circle(debug,target.center,15,Scalar(0,255,0),-1);
-            imwrite(to_string(rand())+".bmp",debug);
-        }
+//        if(target.center.x-before.center.x>100)
+//        {
+//            Mat debug=original.clone();
+//            circle(debug,target.center,15,Scalar(0,255,0),-1);
+//            imwrite(to_string(rand())+".bmp",debug);
+//        }
 //        if(index>=0)
 //        {
 //            before=historyTarget[index];
