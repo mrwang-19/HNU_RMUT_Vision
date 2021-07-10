@@ -29,8 +29,8 @@ struct CURVE_FITTING_COST
         T* residual ) const     // 残差
     {
 //        residual[0] = T ( _y ) - ceres::exp ( abc[0]*T ( _x ) *T ( _x ) + abc[1]*T ( _x ) + abc[2] ); // y-exp(ax^2+bx+c)
-//        auto value=1.305*_tao+0.41666666667*(-ceres::cos(phi[0]+(1.884*(-_tao+_x)))+ceres::cos(phi[0]+1.884*_x));
-        auto value = 1.305*_tau+0.4166666667*(-2)* sin(-1.884*_tau/2)*ceres::sin(phi[0]+1.884*_x+(1.884*_tau/2));
+        auto value = 1.305*_tau + 0.41666666667*(-ceres::cos(phi[0]+(1.884*_x)) + ceres::cos(phi[0]+1.884*(-_tau+_x)));
+//        auto value = 1.305*_tau+0.4166666667*(-2)* sin(-1.884*_tau/2)*ceres::sin(phi[0]+1.884*_x+(1.884*_tau/2));
         residual[0] = T(_y) - value;
         return true;
     }
@@ -48,19 +48,19 @@ void Predictor::timerEvent(QTimerEvent*)
     {
         problem=new ceres::Problem();
         QVector<Target> list(processor->historyTarget);
-        int startIndex=list.size()-1-samples-processor->tao;
+        int startIndex=list.size()-1-samples;
 //        qDebug()<<"startIndex:"<<startIndex;
-        startTarget=list[startIndex];
+        Target currentTarget=list.last();
         // seve the start time
-        startTimestamp=startTarget.timestamp;
+        startTimestamp=currentTarget.timestamp;
         int count=0;
-        for(int i=startIndex+processor->tao;i<startIndex+processor->tao+samples;i++)
+        for(int i=startIndex;i<startIndex+samples;i++)
         {
 //            cout<<list[i].angleDifference<<",";
 //            if(list[i].angleDifference>0.1)
 //            {
 //                count++;
-                double tmp=((double)(list[i].timestamp-list[startIndex+processor->tao].timestamp))/1000;
+                double tmp=((double)(currentTarget.timestamp-list[i].timestamp))/-1000;
 //                qDebug()<<tmp<<","<<(double)list[i].angleDifference;
                 problem->AddResidualBlock (     // 向问题中添加误差项
                         // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
@@ -84,14 +84,14 @@ void Predictor::timerEvent(QTimerEvent*)
             ceres::Solver::Summary summary;                // 优化信息
             ceres::Solve ( options,problem, &summary );  // 开始优化
 //            cout<<summary.BriefReport() <<endl;
-//            //如果没有跳变则融合上次预测结果与实际时间
+            //如果没有跳变则融合上次预测结果与实际时间
 //            if(_phi[0]-last_phi<CV_PI)
-//                phi=(_phi[0]+last_phi+0.0159235668789809)/2;
+//                phi=_phi[0]*0.6+(last_phi+0.0159235668789809)*0.4;
 //            else
-            phi=_phi[0];
+                phi=_phi[0];
             last_phi=phi;   //更新last_phi
 //            qDebug()<<phi;
-//            emit newPhi(startTimestamp, fmod(_phi[0]+CV_2PI,CV_2PI));
+            emit newPhi(startTimestamp, fmod(_phi[0]+CV_2PI,CV_2PI));
 //        }
         delete problem;
     }
@@ -104,23 +104,29 @@ float pos_fun(float t,float phi)
 
 Point2f Predictor::predictPoint(float predictTime)
 {
+    static float lastX,lastY;
     Point2f tmp;
     float predictAngleDifference=0.0;
-    Target currentTarget;
+//    Target currentTarget;
     currentTarget=processor->historyTarget.last();
     float timePassed=((float)(currentTarget.timestamp-startTimestamp))/1000.0;
-    predictAngleDifference= pos_fun(timePassed+predictTime,phi)-pos_fun(0,phi);
+    predictAngleDifference= pos_fun(predictTime,phi)-pos_fun(0,phi);
 //    qDebug()<<phi<<","<<timePassed+predictTime<<","<<predictAngleDifference;
-    auto angle= fmod(startTarget.armorAngle+predictAngleDifference+CV_2PI,CV_2PI);
-    emit newPhi(currentTarget.timestamp+(int)(predictTime*1000),angle);
+//    auto angle= fmod(currentTarget.armorAngle+predictAngleDifference+CV_2PI,CV_2PI);
+//    emit newPhi(currentTarget.timestamp+(int)(predictTime*1000),angle);
 //    float predictAngleDifference=0.8333333333*sin(0.942*predictTime)*sin(1.884*(timePassed)+0.942/predictTime+phi)+1.305*predictTime;
-    float x=startTarget.normalizedCenter.x;
-    float y=startTarget.normalizedCenter.y;
+    float x=currentTarget.normalizedCenter.x;
+    float y=currentTarget.normalizedCenter.y;
     //顺时针旋转
     if(!processor->rotateDirection)
         predictAngleDifference=-predictAngleDifference;
     tmp.x=x*cos(predictAngleDifference)-y*sin(predictAngleDifference);
+//    if(abs(tmp.x-lastX)<10)
+    tmp.x=0.8*tmp.x+0.2*lastX;
+    lastX=tmp.x;
     tmp.y=y*cos(predictAngleDifference)+x*sin(predictAngleDifference);
+//    if(abs(tmp.y-lastY)<10)
+    tmp.y=0.1*tmp.y+0.9*lastY;
+    lastY=tmp.y;
     return currentTarget.center+tmp;
 }
-

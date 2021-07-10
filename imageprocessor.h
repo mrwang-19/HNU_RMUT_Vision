@@ -33,6 +33,7 @@ struct Target
     float angleDifference=0;    //间隔tao帧的角度差(单位：deg)
     Point2f center;             //能量机关中心坐标
     uint64_t timestamp;         //采集时间戳
+    float radius;               //半径
     String toString();
 };
 Q_DECLARE_METATYPE(Target)

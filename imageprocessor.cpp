@@ -75,6 +75,7 @@ float myArctan(Point2f p)
 void ImageProcessor::detectTarget(uint64_t timestamp)
 {
     static uint64 frame_count=0;
+    static float lastCenterX,lastCenterY;
     Mat original,binaryImage;
     Target target;
     target.index=frame_count;
@@ -97,8 +98,6 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
 //    QDateTime dateTime = QDateTime::fromMSecsSinceEpoch(timestamp);
 //    qDebug()<<"processor:"<<frame_count<<" "<<dateTime.toString("hh:mm:ss.zzz");
     findContours(binaryImage,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
-    //    drawContours(fliped,contours,max,Scalar(0,255,0),5);
-    //    drawContours(fliped,contours,min,Scalar(255,0,0),5);
     float max_area=2.0,max_rito=2.0;
     if(contours.size()<2)
     {
@@ -135,6 +134,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
         target.armorCenter=target.armorRect.center;
         //计算目标装甲板中心相对于能量机关中心的像素坐标
         target.normalizedCenter=Point2f(target.armorCenter.x-target.center.x,target.armorCenter.y-target.center.y);
+        target.radius= sqrt(target.normalizedCenter.x*target.normalizedCenter.x+target.normalizedCenter.y*target.normalizedCenter.y);
         //计算目标装甲板中心相对于能量机关中心x轴的夹角
         target.armorAngle=myArctan(target.normalizedCenter);
         int index=historyTarget.size()-1;
@@ -145,16 +145,18 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
 //        {
 //            Mat debug=original.clone();
 //            circle(debug,target.center,15,Scalar(0,255,0),-1);
+        //    drawContours(fliped,contours,max,Scalar(0,255,0),5);
+        //    drawContours(fliped,contours,min,Scalar(255,0,0),5);
 //            imwrite(to_string(rand())+".bmp",debug);
 //        }
-//        if(index>=0)
-//        {
-//            before=historyTarget[index];
-//            if(fabs(before.armorAngle-target.armorAngle)<3.0)
-//            {
-//                target.armorAngle=0.5*target.armorAngle+0.5*before.armorAngle;
-//            }
-//        }
+        if(index>=0)
+        {
+            before=historyTarget[index];
+            if(fabs(before.armorAngle-target.armorAngle)<3.0)
+            {
+                target.armorAngle=0.5*target.armorAngle+0.5*before.armorAngle;
+            }
+        }
         //计算角度差
         index=historyTarget.size()-tao-1;
         if(index>=0)

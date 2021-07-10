@@ -28,7 +28,7 @@ public:
     double last_phi;            //上一次拟合得到的相位
     int timerID;                //定时器ID
     uint64 startTimestamp;      //起始帧时间辍
-    Target startTarget;
+    Target currentTarget;
     Point2f predictPoint(float predictTime);   //计算预测角度差；
 private:
     ImageProcessor *processor;      //图像处理类

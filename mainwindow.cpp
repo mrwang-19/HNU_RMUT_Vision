@@ -100,7 +100,7 @@ void MainWindow::on_OpenButton_clicked()
         predictor->moveToThread(&predictorHandler);
         predictorHandler.start();
         //启动定时器
-        timerID=startTimer(33);
+        timerID=startTimer(33ms);
         ui->OpenButton->setText("关闭");
     }
     else
@@ -175,17 +175,17 @@ void MainWindow::timerEvent(QTimerEvent*)
                 //打印时间戳
                 QDateTime dateTime = QDateTime::currentDateTime();
 //                // 字符串格式化
-                QString timestamp = dateTime.toString("hh:mm:ss.zzz");
+//                QString timestamp = dateTime.toString("hh:mm:ss.zzz");
 //                qDebug()<<QThread::currentThread()<<timestamp;
                 float timePassed=((float)(dateTime.toMSecsSinceEpoch()-lastTimestamp))/1000.0;
                 if(timePassed>2)
                 {
                     lastTimestamp=dateTime.currentDateTime().toMSecsSinceEpoch();
-                    if(timePassed>1.9)
-                        transceiver->sendFrame.shootCommand=1;
                 }
+                if(timePassed>1.9)
+                    transceiver->sendFrame.shootCommand=1;
                 p=predictor->predictPoint(2.0-timePassed);
-//                p=predictor->predictPoint(2.0);
+//                p=predictor->predictPoint(0.1);
                 Mat img;
                 processor->frameQueue.last().copyTo(img);
                 circle(img,tmp.center,15,Scalar(0,255,0),-1);
