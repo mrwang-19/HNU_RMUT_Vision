@@ -31,7 +31,8 @@ void Transceiver::timerEvent(QTimerEvent *)
     }
     if(sendFrame.shootCommand)
         count++;
-    if(count>10)
+    //最多发四次
+    if(count>4)
     {
         count=0;
         sendFrame.shootCommand=0;

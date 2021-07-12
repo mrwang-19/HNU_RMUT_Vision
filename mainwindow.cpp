@@ -153,6 +153,8 @@ bool MainWindow::cam_init()
     status&=cam.setExposureMode(0);
     //设置曝光时长
     status&=cam.setExposureTime(exposureTime);
+    //设置帧率
+    status&=cam.setFrameRate(ui->frameRateSpinBox->value());
     //设置分辨率
     status&=cam.setImgSize(width,height);
     return status;
