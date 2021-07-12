@@ -22,6 +22,11 @@ float pid::pid_calc(float get, float set)
 
     return out;
 }
+void pid::pid_reset() {
+    iout=0;
+    err[NOW]=0;
+    err[LAST]=0;
+}
 void pid::abs_limit(float *a,float max)
 {
     if(*a>max)

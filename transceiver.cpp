@@ -13,7 +13,7 @@ Transceiver::Transceiver(QString portName, QObject *parent) : QObject(parent)
 //    serial->setReadBufferSize(sizeof(RecvFrame));
     connect(serial,&QSerialPort::readyRead,this,&Transceiver::receiveData);
     serial->open(QIODevice::ReadWrite);
-    timerID=startTimer(20ms);
+    timerID=startTimer(10ms);
 }
 Transceiver::~Transceiver()
 {
@@ -31,8 +31,8 @@ void Transceiver::timerEvent(QTimerEvent *)
     }
     if(sendFrame.shootCommand)
         count++;
-    //最多发四次
-    if(count>4)
+    //最多发2次
+    if(count>2)
     {
         count=0;
         sendFrame.shootCommand=0;

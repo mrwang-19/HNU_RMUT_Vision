@@ -170,7 +170,7 @@ void MainWindow::timerEvent(QTimerEvent*)
         if(processor->historyTarget.size()>0)
         {
             Target tmp=processor->historyTarget.last();
-            Point2f p;
+            Point2f p,q;
             //预测目标并刷新预览图
             if(processor->frameQueue.size()>0)
             {
@@ -184,16 +184,20 @@ void MainWindow::timerEvent(QTimerEvent*)
                 if(timePassed>predictTime)
                 {
                     lastTimestamp=dateTime.currentDateTime().toMSecsSinceEpoch();
+                    pid_pit.pid_reset();
+                    pid_yaw.pid_reset();
                 }
                 if(timePassed>(predictTime-0.1))
                     transceiver->sendFrame.shootCommand=1;
                 p=predictor->predictPoint(predictTime-timePassed);
+                q.x=p.x-ui->hBaisSpinBox->value();
+                q.y=p.y-ui->vBaisSpinBox->value();
 //                p=predictor->predictPoint(0.1);
                 Mat img;
                 processor->frameQueue.last().copyTo(img);
                 circle(img,tmp.center,15,Scalar(0,255,0),-1);
                 circle(img,tmp.armorCenter,15,Scalar(255,0,0),-1);
-                circle(img,p,15,Scalar(255,255,0),-1);
+                circle(img,q,15,Scalar(255,255,0),-1);
                 QImage ori=QImage((const uchar*)img.data,width,height,QImage::Format_RGB888);
                 ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
             }
@@ -212,8 +216,9 @@ void MainWindow::timerEvent(QTimerEvent*)
             //PID闭环
             if(ui->checkBoxFollowCenter->isChecked())
             {
-                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(p.x,width/2+ui->hBaisSpinBox->value());
-                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(p.y,height/2+ui->vBaisSpinBox->value());
+                //增量式PID
+                transceiver->sendFrame.yawAngleSet=transceiver->recvFrame.yawAngleGet+pid_yaw.pid_calc(p.x,width/2+ui->hBaisSpinBox->value());
+                transceiver->sendFrame.pitchAngleSet=transceiver->recvFrame.pitchAngleGet+pid_pit.pid_calc(p.y,height/2+ui->vBaisSpinBox->value());
             }
             else if(ui->checkBoxFollowArmor->isChecked())
             {
