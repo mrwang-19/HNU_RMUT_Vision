@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     ui->OriginalImage->setScaledContents(true);
-    ui->ProcessedImage->setScaledContents(true);
+//    ui->ProcessedImage->setScaledContents(true);
     pid_pit.kp=ui->pitKpSpinBox->value();
     pid_pit.ki=ui->pitKiSpinBox->value();
     pid_pit.kd=ui->pitKdSpinBox->value();

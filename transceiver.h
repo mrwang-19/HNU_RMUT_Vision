@@ -35,6 +35,7 @@ public:
     SendFrame sendFrame;
     RecvFrame recvFrame;
     int timerID;
+    uint count;     //shootcmd计数
 
 signals:
 
