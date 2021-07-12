@@ -216,7 +216,6 @@ void MainWindow::timerEvent(QTimerEvent*)
             //PID闭环
             if(ui->checkBoxFollowCenter->isChecked())
             {
-                //增量式PID
                 transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(p.x,width/2+ui->hBaisSpinBox->value());
                 transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(p.y,height/2+ui->vBaisSpinBox->value());
             }
