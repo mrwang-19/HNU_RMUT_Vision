@@ -32,7 +32,7 @@ void Transceiver::timerEvent(QTimerEvent *)
     if(sendFrame.shootCommand)
         count++;
     //最多发2次
-    if(count>2)
+    if(count>1)
     {
         count=0;
         sendFrame.shootCommand=0;

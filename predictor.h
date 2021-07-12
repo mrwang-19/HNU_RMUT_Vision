@@ -30,6 +30,7 @@ public:
     uint64 startTimestamp;      //起始帧时间辍
     Target currentTarget;
     Point2f predictPoint(float predictTime);   //计算预测角度差；
+    float getSpeed(float predictTime);
 private:
     ImageProcessor *processor;      //图像处理类
     ceres::Problem *problem;        //Ceres库待求解问题

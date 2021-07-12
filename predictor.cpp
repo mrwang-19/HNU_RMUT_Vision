@@ -122,11 +122,15 @@ Point2f Predictor::predictPoint(float predictTime)
         predictAngleDifference=-predictAngleDifference;
     tmp.x=x*cos(predictAngleDifference)-y*sin(predictAngleDifference);
 //    if(abs(tmp.x-lastX)<10)
-    tmp.x=0.8*tmp.x+0.2*lastX;
+    tmp.x=0.1*tmp.x+0.9*lastX;
     lastX=tmp.x;
     tmp.y=y*cos(predictAngleDifference)+x*sin(predictAngleDifference);
 //    if(abs(tmp.y-lastY)<10)
     tmp.y=0.1*tmp.y+0.9*lastY;
     lastY=tmp.y;
     return currentTarget.center+tmp;
+}
+float Predictor::getSpeed(float predictTime)
+{
+    0.785*sin(1.884*predictTime+phi)+1.305;
 }

@@ -184,10 +184,10 @@ void MainWindow::timerEvent(QTimerEvent*)
                 if(timePassed>predictTime)
                 {
                     lastTimestamp=dateTime.currentDateTime().toMSecsSinceEpoch();
-                    pid_pit.pid_reset();
-                    pid_yaw.pid_reset();
+//                    pid_pit.pid_reset();
+//                    pid_yaw.pid_reset();
                 }
-                if(timePassed>(predictTime-0.1))
+                if(timePassed>(predictTime-0.3*predictor->getSpeed(predictTime-timePassed)))
                     transceiver->sendFrame.shootCommand=1;
                 p=predictor->predictPoint(predictTime-timePassed);
                 q.x=p.x-ui->hBaisSpinBox->value();
@@ -217,8 +217,8 @@ void MainWindow::timerEvent(QTimerEvent*)
             if(ui->checkBoxFollowCenter->isChecked())
             {
                 //增量式PID
-                transceiver->sendFrame.yawAngleSet=transceiver->recvFrame.yawAngleGet+pid_yaw.pid_calc(p.x,width/2+ui->hBaisSpinBox->value());
-                transceiver->sendFrame.pitchAngleSet=transceiver->recvFrame.pitchAngleGet+pid_pit.pid_calc(p.y,height/2+ui->vBaisSpinBox->value());
+                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(p.x,width/2+ui->hBaisSpinBox->value());
+                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(p.y,height/2+ui->vBaisSpinBox->value());
             }
             else if(ui->checkBoxFollowArmor->isChecked())
             {
