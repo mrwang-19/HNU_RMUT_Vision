@@ -57,10 +57,10 @@ void Predictor::timerEvent(QTimerEvent*)
         for(int i=startIndex;i<startIndex+samples;i++)
         {
 //            cout<<list[i].angleDifference<<",";
-//            if(list[i].angleDifference>0.1)
-//            {
-//                count++;
-                double tmp=((double)(currentTarget.timestamp-list[i].timestamp))/-1000;
+            if(list[i].angleDifference>0.1)
+            {
+                count++;
+                double tmp=((double)(currentTarget.timestamp-list[i].timestamp))/-1000000000;//纳秒换秒
 //                qDebug()<<tmp<<","<<(double)list[i].angleDifference;
                 problem->AddResidualBlock (     // 向问题中添加误差项
                         // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
@@ -71,13 +71,13 @@ void Predictor::timerEvent(QTimerEvent*)
                         nullptr,            // 核函数，这里不使用，为空
                         _phi                 // 待估计参数
                 );
-//            }
+            }
         }
 //        cout<<endl;
 //            qDebug()<<"count:"<<count;
         //有效样本足够多才能进行拟合
-//        if(count>samples-10)
-//        {
+        if(count>samples-10)
+        {
             //设定参数边界
 //            problem->SetParameterLowerBound(_phi,0,0);
 //            problem->SetParameterUpperBound(_phi,0,CV_2PI);
@@ -92,7 +92,7 @@ void Predictor::timerEvent(QTimerEvent*)
             last_phi=phi;   //更新last_phi
 //            qDebug()<<phi;
             emit newPhi(startTimestamp, fmod(_phi[0]+CV_2PI,CV_2PI));
-//        }
+        }
         delete problem;
     }
 }
@@ -132,5 +132,7 @@ Point2f Predictor::predictPoint(float predictTime)
 }
 float Predictor::getSpeed(float predictTime)
 {
-    0.785*sin(1.884*predictTime+phi)+1.305;
+    float speed=0.785*sin(1.884*predictTime+phi)+1.305;
+    emit newSpeed(currentTarget.timestamp,speed);
+    return speed;
 }

@@ -54,7 +54,7 @@ protected:
 
 signals:
     //使用真实相机时发送原始图像数据
-    void newImage(char* img_data,int height,int width);
+    void newImage(char* img_data,int height,int width,uint64_t timestamp);
     //使用录制视频时发送Mat对象
     void newImage(Mat img);
 };

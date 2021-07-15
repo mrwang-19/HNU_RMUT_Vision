@@ -20,10 +20,14 @@ ChartPainter::ChartPainter(QWidget *parent) : QCustomPlot(parent)
     graph(1)->setPen(QPen(QColor(255, 110, 40)));
     graph(1)->setLineStyle(QCPGraph::lsNone);
     graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
-    addGraph(); // green line
+    addGraph(); // black line
     graph(2)->setPen(QPen(QColor(0, 0, 0)));
     graph(2)->setLineStyle(QCPGraph::lsNone);
     graph(2)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
+    addGraph(); // green line
+    graph(3)->setPen(QPen(QColor(0, 255, 0)));
+    graph(3)->setLineStyle(QCPGraph::lsNone);
+    graph(3)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
     QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
     timeTicker->setTimeFormat("%m:%s");
     timeTicker->setTickCount(10);
@@ -41,7 +45,7 @@ void ChartPainter::onTarget(Target target)
     if(target.hasTarget)
     {
         // calculate two new data points:
-        double key = (target.timestamp-timeStart)/1000.0; // time elapsed since start of demo, in seconds
+        double key = (target.timestamp-timeStart)/1000000000.0; // time elapsed since start of demo, in seconds
         static double lastPointKey = 0;
         if (key-lastPointKey > 0.002) // at most add point every 2 ms
         {
@@ -60,6 +64,11 @@ void ChartPainter::onTarget(Target target)
 }
 void ChartPainter::onPhi(uint64 timestamp,float phi)
 {
-    double key = (timestamp-timeStart)/1000.0;
+    double key = (timestamp-timeStart)/1000000000.0;
     graph(2)->addData(key , phi);
+}
+void ChartPainter::onSpeed(uint64 timestamp,float speed)
+{
+    double key = (timestamp-timeStart)/1000000000.0;
+    graph(3)->addData(key , speed);
 }

@@ -14,6 +14,7 @@ public:
 public slots:
     void onTarget(Target target);
     void onPhi(uint64 timestamp,float phi);
+    void onSpeed(uint64 timestamp,float speed);
 private:
     uint64 timeStart = QDateTime::currentDateTime().toMSecsSinceEpoch();
 

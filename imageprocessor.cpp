@@ -66,11 +66,8 @@ float myArctan(Point2f p)
 }
 
 /**
- * @brief MainWindow::detect 由预处理过的视频识别能量机关的中心和目标装甲板的像素坐标
- * @param src 经过预处理（二值化）的图片
- * @param center 能量机关的中心
- * @param armor 目标装甲板的中心
- * @return 是否检测到目标
+ * @brief ImageProcessor::detect 由预处理过的视频识别能量机关的中心和目标装甲板的像素坐标
+ * @param timestamp 从相机得到的纳秒级时间戳
  */
 void ImageProcessor::detectTarget(uint64_t timestamp)
 {
@@ -145,8 +142,8 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
 //        {
 //            Mat debug=original.clone();
 //            circle(debug,target.center,15,Scalar(0,255,0),-1);
-        //    drawContours(fliped,contours,max,Scalar(0,255,0),5);
-        //    drawContours(fliped,contours,min,Scalar(255,0,0),5);
+//            drawContours(fliped,contours,max,Scalar(0,255,0),5);
+//            drawContours(fliped,contours,min,Scalar(255,0,0),5);
 //            imwrite(to_string(rand())+".bmp",debug);
 //        }
         if(index>=0)
@@ -216,15 +213,15 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
 /// \param img_data 图像数据
 /// \param height
 /// \param width
-///
-void ImageProcessor::onNewImage(char* img_data,int height,int width)
+/// \param timestamp 从相机得到的纳秒级时间戳
+void ImageProcessor::onNewImage(char* img_data,int height,int width,uint64_t timestamp)
 {
     //打印时间戳
-    QDateTime dateTime = QDateTime::currentDateTime();
+//    QDateTime dateTime = QDateTime::currentDateTime();
     // 字符串格式化
 //    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
 //    qDebug()<<QThread::currentThread()<<timestamp;
-    uint64_t mills_timestamp=dateTime.toMSecsSinceEpoch();
+//    uint64_t mills_timestamp=dateTime.toMSecsSinceEpoch();
     Mat frame=Mat(height,width,CV_8UC3);
     //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）
     for(int i=0;i<width*height*3;i++)
@@ -234,7 +231,7 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width)
     frameLock.lock();
     frameQueue.append(frame);
     frameLock.unlock();
-    QFuture<void> future = QtConcurrent::run(&processors,this,&ImageProcessor::detectTarget,mills_timestamp);
+    QFuture<void> future = QtConcurrent::run(&processors,this,&ImageProcessor::detectTarget,timestamp);
 
 //    pretreatment(orignalImage);
 //    Target target=detectTarget(mills_timestamp);
@@ -254,7 +251,7 @@ void ImageProcessor::onNewImage(Mat frame)
     frameLock.lock();
     frameQueue.append(frame);
     frameLock.unlock();
-    QFuture<void> future = QtConcurrent::run(&processors,this,&ImageProcessor::detectTarget,mills_timestamp);
+    QFuture<void> future = QtConcurrent::run(&processors,this,&ImageProcessor::detectTarget,mills_timestamp*1000000);//毫秒换纳秒
 }
 /**
  * @brief ImageProcessor::startRecording    打开录制

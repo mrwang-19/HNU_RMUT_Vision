@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     pid_yaw.kp=ui->yawKpSpinBox->value();
     pid_yaw.ki=ui->yawKiSpinBox->value();
     pid_yaw.kd=ui->yawKdSpinBox->value();
-    angleSolver.setCameraParam("/home/rm/HNU_RMUT_Version/camera_params.xml", 1);
+    angleSolver.setCameraParam("/home/rm/HNU_RMUT_Version/mmp.xml", 1);
     pointer_=this;
     this->move(100,100);
 }
@@ -64,7 +64,7 @@ void MainWindow::on_OpenButton_clicked()
             //创建处理线程
             processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value());
             processor->moveToThread(&processorHandler);
-            connect(&cam,static_cast<void (Camera::*)(char*,int,int)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(char *,int,int)>(&ImageProcessor::onNewImage));
+            connect(&cam,static_cast<void (Camera::*)(char*,int,int,uint64_t)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(char *,int,int,uint64_t)>(&ImageProcessor::onNewImage));
         }
         else
         {
@@ -97,6 +97,7 @@ void MainWindow::on_OpenButton_clicked()
         predictor = new Predictor(processor,150);
         connect(&predictorHandler,&QThread::finished,predictor,&Predictor::deleteLater);
         connect(predictor,&Predictor::newPhi,ui->chartPainter,&ChartPainter::onPhi);
+        connect(predictor,&Predictor::newSpeed,ui->chartPainter,&ChartPainter::onSpeed);
         predictor->moveToThread(&predictorHandler);
         predictorHandler.start();
         //启动定时器
@@ -223,7 +224,8 @@ void MainWindow::timerEvent(QTimerEvent*)
             {
 //                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.armorCenter.x,width/2+ui->hBaisSpinBox->value());
 //                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.armorCenter.y,height/2+ui->vBaisSpinBox->value());
-                auto pnt=Point2f(p.x,p.y-ui->vBaisSpinBox->value());
+                auto pnt=Point2f(tmp.armorCenter.x,tmp.armorCenter.y);
+//                auto pnt=Point2f(p.x,p.y-ui->vBaisSpinBox->value());
                 float y,p;
                 angleSolver.getAngle(pnt,y,p);
                 ui->calcPitLable->setText(QString::number(p));

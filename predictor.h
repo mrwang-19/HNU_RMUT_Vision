@@ -40,7 +40,8 @@ protected:
     void timerEvent(QTimerEvent *e);
 
 signals:
-    void newPhi(double timestamp,float phi);
+    void newPhi(uint64_t timestamp,float phi);
+    void newSpeed(uint64_t timestamp,float phi);
 };
 
 #endif // PREDICTOR_H

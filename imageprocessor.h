@@ -29,8 +29,9 @@ struct Target
     RotatedRect armorRect;      //要击打的装甲板的边缘矩形
     Point2f armorCenter;        //要击打的装甲板的中心像素坐标
     Point2f normalizedCenter;   //目标装甲板减去能量机关中心后的坐标
-    float armorAngle=0;         //锤子角度(单位：deg)
-    float angleDifference=0;    //间隔tao帧的角度差(单位：deg)
+    float armorAngle=0;         //锤子角度(单位：rad)
+    float lastArmorAngle=0;     //折算至上一次跳变前的锤子角度(单位：rad)
+    float angleDifference=0;    //间隔tao帧的角度差(单位：rad)
     Point2f center;             //能量机关中心坐标
     uint64_t timestamp;         //采集时间戳
     float radius;               //半径
@@ -63,7 +64,7 @@ public:
 public slots:
     void startRecording(QString savePath);
     void stopRecording();
-    void onNewImage(char* img_data,int height,int width);
+    void onNewImage(char* img_data,int height,int width,uint64_t timestamp);
     void onNewImage(Mat Frame);
 private:
     //函数

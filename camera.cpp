@@ -1,4 +1,5 @@
 #include "camera.h"
+#include <QDebug>
 
 Camera* Camera::pointer_=nullptr;
 
@@ -6,6 +7,7 @@ Camera::Camera(QObject *parent):QObject(parent=nullptr)
 {
     //注册Mat类型为MetaType
     qRegisterMetaType<Mat>("CV_Matrix");
+    qRegisterMetaType<uint64_t>("uint64_t");
     //为工具指针赋值
     pointer_=this;
 }
@@ -79,6 +81,7 @@ void GX_STDC Camera::OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame)
 {
     if (pFrame->status == GX_FRAME_STATUS_SUCCESS)
     {
+//        qDebug()<<pFrame->nTimestamp;
         char *pRGB24Buf = new char[pFrame->nWidth * pFrame->nHeight * 3]; //输 出 图 像 RGB 数 据
         if (pRGB24Buf == NULL)
         {
@@ -104,7 +107,7 @@ void GX_STDC Camera::OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame)
             return;
         }
         //发射信号，传输图片数据
-        emit pointer_->newImage(pRGB24Buf,pFrame->nHeight,pFrame->nWidth);
+        emit pointer_->newImage(pRGB24Buf,pFrame->nHeight,pFrame->nWidth,pFrame->nTimestamp);
     }
     return;
 }
