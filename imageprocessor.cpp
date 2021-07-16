@@ -17,14 +17,10 @@ ImageProcessor::ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate
     blueDecay(blueDecay)
 {
     qRegisterMetaType<Target>("Target");
-//    orignalImage = new  Mat(height,width,CV_8UC3);
-//    binaryImage = new Mat(height,width,CV_8UC1);
 }
 ImageProcessor::~ImageProcessor()
 {
     processors.waitForDone();
-//    delete orignalImage;
-//    delete binaryImage;
 }
 /**
  * @brief pretreatment 预处理采集到的图像帧

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QThread>
+#include <QTime>
 
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -38,9 +39,9 @@ private slots:
 
     void on_blueDecaySpinBox_valueChanged(double arg1);
 
-    void on_checkBoxFollowCenter_stateChanged(int arg1);
+    void on_checkBoxFollowPredict_stateChanged(int arg1);
 
-    void on_checkBoxFollowArmor_stateChanged(int arg1);
+    void on_checkBoxFollowCurrent_stateChanged(int arg1);
 
     void on_yawKpSpinBox_valueChanged(double arg1);
 
@@ -66,7 +67,7 @@ protected:
 private:
     //变量
     Ui::MainWindow *ui;
-    Camera cam;                       //相机包装类
+    Camera cam;                             //相机包装类
     ImageProcessor * processor = nullptr;   //图像处理线程类
     QThread processorHandler;               //图像处理线程句柄
     Transceiver * transceiver = nullptr;    //串口收发线程
@@ -74,14 +75,16 @@ private:
     Predictor * predictor = nullptr;        //预测线程
     QThread predictorHandler;               //预测线程句柄
     QThread chartPainterHandler;            //绘图线程句柄
-    pid pid_yaw=pid(0.015,0.002,0.0,90),pid_pit=pid(0.015,0.002,0.0,20);
+    pid pid_yaw=pid(0.015,0.002,0.0,30);    //yaw轴pid类
+    pid pid_pit=pid(0.015,0.002,0.0,20);    //pitch轴pid类
     uint64 lastTimestamp;                   //上次迭代时间
     int timerID;                            //定时器ID
     int width,height,exposureTime;          //图像宽度、高度、曝光时长
     AngleSolver angleSolver;                //角度解算类
+    QTime shootTimer;                       //计算射击时间使用
+    float tmp_yaw=0.0f,tmp_pit=0.0f;        //针孔模型解算得到的未加补偿时的临时云台角度
 
     //函数
     bool cam_init();    //初始化相机参数
-    static QImage cvMat2QImage(const cv::Mat& mat);
 };
 #endif // MAINWINDOW_H

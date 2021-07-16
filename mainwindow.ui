@@ -71,7 +71,7 @@
       <x>730</x>
       <y>0</y>
       <width>291</width>
-      <height>591</height>
+      <height>609</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" columnstretch="0,0" columnminimumwidth="0,0">
@@ -130,7 +130,7 @@
         <double>0.000100000000000</double>
        </property>
        <property name="value">
-        <double>0.010000000000000</double>
+        <double>0.100000000000000</double>
        </property>
       </widget>
      </item>
@@ -165,7 +165,7 @@
         <double>0.000010000000000</double>
        </property>
        <property name="value">
-        <double>0.005000000000000</double>
+        <double>0.200000000000000</double>
        </property>
       </widget>
      </item>
@@ -217,14 +217,17 @@
        <property name="decimals">
         <number>6</number>
        </property>
+       <property name="minimum">
+        <double>-15.000000000000000</double>
+       </property>
        <property name="maximum">
-        <double>300.000000000000000</double>
+        <double>15.000000000000000</double>
        </property>
        <property name="singleStep">
-        <double>0.500000000000000</double>
+        <double>0.100000000000000</double>
        </property>
        <property name="value">
-        <double>85.000000000000000</double>
+        <double>4.700000000000000</double>
        </property>
       </widget>
      </item>
@@ -296,13 +299,13 @@
         <number>6</number>
        </property>
        <property name="maximum">
-        <double>50.000000000000000</double>
+        <double>1.000000000000000</double>
        </property>
        <property name="singleStep">
         <double>0.001000000000000</double>
        </property>
        <property name="value">
-        <double>0.010000000000000</double>
+        <double>0.100000000000000</double>
        </property>
       </widget>
      </item>
@@ -392,13 +395,13 @@
         <number>6</number>
        </property>
        <property name="maximum">
-        <double>50.000000000000000</double>
+        <double>2.000000000000000</double>
        </property>
        <property name="singleStep">
         <double>0.001000000000000</double>
        </property>
        <property name="value">
-        <double>0.005000000000000</double>
+        <double>0.200000000000000</double>
        </property>
       </widget>
      </item>
@@ -463,7 +466,7 @@
         <double>0.500000000000000</double>
        </property>
        <property name="value">
-        <double>10.000000000000000</double>
+        <double>0.000000000000000</double>
        </property>
       </widget>
      </item>
@@ -635,16 +638,16 @@
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
-      <widget class="QCheckBox" name="checkBoxFollowCenter">
+      <widget class="QCheckBox" name="checkBoxFollowPredict">
        <property name="text">
-        <string>PID闭环</string>
+        <string>跟随预测点</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="checkBoxFollowArmor">
+      <widget class="QCheckBox" name="checkBoxFollowCurrent">
        <property name="text">
-        <string>小孔成像解算</string>
+        <string>跟随当前点</string>
        </property>
       </widget>
      </item>

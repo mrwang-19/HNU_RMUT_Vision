@@ -17,7 +17,6 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     ui->OriginalImage->setScaledContents(true);
-//    ui->ProcessedImage->setScaledContents(true);
     pid_pit.kp=ui->pitKpSpinBox->value();
     pid_pit.ki=ui->pitKiSpinBox->value();
     pid_pit.kd=ui->pitKdSpinBox->value();
@@ -25,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     pid_yaw.ki=ui->yawKiSpinBox->value();
     pid_yaw.kd=ui->yawKdSpinBox->value();
     angleSolver.setCameraParam("/home/rm/HNU_RMUT_Version/camera_params.xml", 1);
+    shootTimer=QTime::currentTime();
     pointer_=this;
     this->move(100,100);
 }
@@ -59,12 +59,12 @@ void MainWindow::on_OpenButton_clicked()
             }
             else
                 return;
-            //开采
-            cam.startCapture();
             //创建处理线程
             processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value());
             processor->moveToThread(&processorHandler);
             connect(&cam,static_cast<void (Camera::*)(char*,int,int,uint64_t)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(char *,int,int,uint64_t)>(&ImageProcessor::onNewImage));
+            //开采
+            cam.startCapture();
         }
         else
         {
@@ -72,12 +72,12 @@ void MainWindow::on_OpenButton_clicked()
                 return;
             height=cam.getHeight();
             width=cam.getWidth();
-            //开采
-            cam.startCapture();
             //创建处理线程
             processor=new ImageProcessor(height,width,(uint16_t)cam.getFrameRate(),ui->blueDecaySpinBox->value());
             processor->moveToThread(&processorHandler);
             connect(&cam,static_cast<void (Camera::*)(Mat)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(Mat)>(&ImageProcessor::onNewImage));
+            //开采
+            cam.startCapture();
         }
 
         connect(this,&MainWindow::startRecording,processor,&ImageProcessor::startRecording);
@@ -124,7 +124,88 @@ void MainWindow::on_OpenButton_clicked()
     }
 }
 
+/**
+ * @brief MainWindow::timerEvent    主窗口定时器处理函数，按照固定频率给出预测、解算云台角度并刷新主界面上显示的图像
+ * @param e
+ */
+void MainWindow::timerEvent(QTimerEvent*)
+{
+    if(processor!=nullptr && transceiver!=nullptr)
+    {
+        if(processor->historyTarget.size()>0)
+        {
+            Target tmp=processor->historyTarget.last();
 
+            Mat img;    //最新原始图像的拷贝，用于调试
+            if(processor->frameQueue.size()>0)
+                processor->frameQueue.last().copyTo(img);
+
+            //刷新目标信息
+            if(tmp.hasTarget)
+            {
+                //预测
+                Point2f p;
+                //打印时间戳
+                qDebug()<<QThread::currentThread()<<shootTimer.currentTime();
+                float timePassed=shootTimer.elapsed()/1000.0f;
+//                qDebug()<<timePassed;
+                float predictTime=ui->predictTimeSpinBox->value();
+                if(timePassed>predictTime)
+                {
+                    shootTimer.restart();
+                }
+                if(timePassed>(predictTime-0.3*predictor->getSpeed(predictTime-timePassed)))
+                    transceiver->sendFrame.shootCommand=1;
+                p=predictor->predictPoint(predictTime-timePassed);
+//                p=predictor->predictPoint(0.1);
+
+                //跟随
+
+                //跟随预测点
+                if(ui->checkBoxFollowPredict->isChecked())
+                {
+                    angleSolver.getAngle(p,tmp_yaw,tmp_pit);
+                    //PID闭环并加入偏置补偿
+                    transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp_yaw,ui->hBaisSpinBox->value());
+                    transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
+                }
+                //跟随当前点
+                else if(ui->checkBoxFollowCurrent->isChecked())
+                {
+                    angleSolver.getAngle(tmp.armorCenter,tmp_yaw,tmp_pit);
+                    //PID闭环并加入偏置补偿
+                    transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp_yaw,ui->hBaisSpinBox->value());
+                    transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
+                }
+                else
+                {
+                    transceiver->sendFrame.yawAngleSet=0;
+                    transceiver->sendFrame.pitchAngleSet=0;
+                }
+                //标出关键点
+                circle(img,tmp.center,15,Scalar(0,255,0),-1);
+                circle(img,tmp.armorCenter,15,Scalar(255,0,0),-1);
+                circle(img,p,15,Scalar(255,255,0),-1);
+                ui->angleLable->setNum(tmp.armorAngle);
+                ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
+                ui->armorLable->setText(QString::number(tmp.armorCenter.x,'f',4)+","+QString::number(tmp.armorCenter.y,'f',4));
+            }
+
+            //更新ui
+            QImage ori=QImage((const uchar*)img.data,width,height,QImage::Format_RGB888);
+            ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
+            //刷新云台角度
+            ui->pitchAngleLable->setText(tr("%1").arg(transceiver->recvFrame.pitchAngleGet));
+            ui->yawAngleLable->setText(tr("%1").arg(transceiver->recvFrame.yawAngleGet));
+
+            ui->calcPitLable->setText(QString::number(tmp_yaw));
+            ui->calcYawLable->setText(QString::number(tmp_pit));
+
+        }
+        //重绘图表
+        ui->chartPainter->replot();
+    }
+}
 void MainWindow::on_RecordButton_clicked()
 {
     if(processor!=nullptr)
@@ -154,144 +235,11 @@ bool MainWindow::cam_init()
     status&=cam.setExposureMode(0);
     //设置曝光时长
     status&=cam.setExposureTime(exposureTime);
-    //设置帧率
+    //设置帧率控制
     status&=cam.setFrameRate(ui->frameRateSpinBox->value());
     //设置分辨率
     status&=cam.setImgSize(width,height);
     return status;
-}
-/**
- * @brief MainWindow::timerEvent    定时器处理函数，用于按照固定频率刷新主界面上显示的图像
- * @param e
- */
-void MainWindow::timerEvent(QTimerEvent*)
-{
-    if(processor!=nullptr && transceiver!=nullptr)
-    {
-        if(processor->historyTarget.size()>0)
-        {
-            Target tmp=processor->historyTarget.last();
-            Point2f p,q;
-            //预测目标并刷新预览图
-            if(processor->frameQueue.size()>0)
-            {
-                //打印时间戳
-                QDateTime dateTime = QDateTime::currentDateTime();
-//                // 字符串格式化
-//                QString timestamp = dateTime.toString("hh:mm:ss.zzz");
-//                qDebug()<<QThread::currentThread()<<timestamp;
-                float timePassed=((float)(dateTime.toMSecsSinceEpoch()-lastTimestamp))/1000.0;
-                float predictTime=ui->predictTimeSpinBox->value();
-                if(timePassed>predictTime)
-                {
-                    lastTimestamp=dateTime.currentDateTime().toMSecsSinceEpoch();
-//                    pid_pit.pid_reset();
-//                    pid_yaw.pid_reset();
-                }
-                if(timePassed>(predictTime-0.3*predictor->getSpeed(predictTime-timePassed)))
-                    transceiver->sendFrame.shootCommand=1;
-                p=predictor->predictPoint(predictTime-timePassed);
-                q.x=p.x-ui->hBaisSpinBox->value();
-                q.y=p.y-ui->vBaisSpinBox->value();
-//                p=predictor->predictPoint(0.1);
-                Mat img;
-                processor->frameQueue.last().copyTo(img);
-                circle(img,tmp.center,15,Scalar(0,255,0),-1);
-                circle(img,tmp.armorCenter,15,Scalar(255,0,0),-1);
-                circle(img,q,15,Scalar(255,255,0),-1);
-                QImage ori=QImage((const uchar*)img.data,width,height,QImage::Format_RGB888);
-                ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
-            }
-            //刷新目标信息
-            if(tmp.hasTarget)
-            {
-
-//                qDebug()<<"main:"<<tmp.index<<" "<<timestamp;
-                ui->angleLable->setNum(tmp.armorAngle);
-                ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
-                ui->armorLable->setText(QString::number(tmp.armorCenter.x,'f',4)+","+QString::number(tmp.armorCenter.y,'f',4));
-            }
-            //刷新云台角度
-            ui->pitchAngleLable->setText(tr("%1").arg(transceiver->recvFrame.pitchAngleGet));
-            ui->yawAngleLable->setText(tr("%1").arg(transceiver->recvFrame.yawAngleGet));
-            //PID闭环
-            if(ui->checkBoxFollowCenter->isChecked())
-            {
-                auto pnt=Point2f(tmp.armorCenter.x,tmp.armorCenter.y);
-                float y,p;
-                angleSolver.getAngle(pnt,y,p);
-                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(y,0);
-                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(p,0);
-            }
-            else if(ui->checkBoxFollowArmor->isChecked())
-            {
-//                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.armorCenter.x,width/2+ui->hBaisSpinBox->value());
-//                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.armorCenter.y,height/2+ui->vBaisSpinBox->value());
-//                auto pnt=Point2f(tmp.armorCenter.x,tmp.armorCenter.y);
-                auto pnt=Point2f(p.x,p.y-ui->vBaisSpinBox->value());
-                float y,p;
-                angleSolver.getAngle(pnt,y,p);
-                ui->calcPitLable->setText(QString::number(p));
-                ui->calcYawLable->setText(QString::number(y));
-                transceiver->sendFrame.yawAngleSet=transceiver->recvFrame.yawAngleGet-y;
-                transceiver->sendFrame.pitchAngleSet=transceiver->recvFrame.pitchAngleGet+p;
-            }
-            else
-            {
-                transceiver->sendFrame.yawAngleSet=0;
-                transceiver->sendFrame.pitchAngleSet=0;
-            }
-        }
-        //重绘图表
-        ui->chartPainter->replot();
-    }
-}
-
-QImage MainWindow::cvMat2QImage(const cv::Mat& mat)
-{
-    // 8-bits unsigned, NO. OF CHANNELS = 1
-    if(mat.type() == CV_8UC1)
-    {
-        QImage image(mat.cols, mat.rows, QImage::Format_Indexed8);
-        // Set the color table (used to translate colour indexes to qRgb values)
-        image.setColorCount(256);
-        for(int i = 0; i < 256; i++)
-        {
-            image.setColor(i, qRgb(i, i, i));
-        }
-        // Copy input Mat
-        uchar *pSrc = mat.data;
-        for(int row = 0; row < mat.rows; row ++)
-        {
-            uchar *pDest = image.scanLine(row);
-            memcpy(pDest, pSrc, mat.cols);
-            pSrc += mat.step;
-        }
-        return image;
-    }
-    // 8-bits unsigned, NO. OF CHANNELS = 3
-    else if(mat.type() == CV_8UC3)
-    {
-        // Copy input Mat
-        const uchar *pSrc = (const uchar*)mat.data;
-        // Create QImage with same dimensions as input Mat
-        QImage image(pSrc, mat.cols, mat.rows, mat.step, QImage::Format_RGB888);
-        return image.rgbSwapped();
-    }
-    else if(mat.type() == CV_8UC4)
-    {
-        qDebug() << "CV_8UC4";
-        // Copy input Mat
-        const uchar *pSrc = (const uchar*)mat.data;
-        // Create QImage with same dimensions as input Mat
-        QImage image(pSrc, mat.cols, mat.rows, mat.step, QImage::Format_ARGB32);
-        return image.copy();
-    }
-    else
-    {
-        qDebug() << "ERROR: Mat could not be converted to QImage.";
-        return QImage();
-    }
 }
 
 void MainWindow::on_blueDecaySpinBox_valueChanged(double arg1)
@@ -300,16 +248,16 @@ void MainWindow::on_blueDecaySpinBox_valueChanged(double arg1)
         processor->blueDecay=arg1;
 }
 
-void MainWindow::on_checkBoxFollowCenter_stateChanged(int)
+void MainWindow::on_checkBoxFollowPredict_stateChanged(int)
 {
-    if(ui->checkBoxFollowArmor->isChecked())
-        ui->checkBoxFollowArmor->setCheckState(Qt::Unchecked);
+    if(ui->checkBoxFollowCurrent->isChecked())
+        ui->checkBoxFollowCurrent->setCheckState(Qt::Unchecked);
 }
 
-void MainWindow::on_checkBoxFollowArmor_stateChanged(int)
+void MainWindow::on_checkBoxFollowCurrent_stateChanged(int)
 {
-    if(ui->checkBoxFollowCenter->isChecked())
-        ui->checkBoxFollowCenter->setCheckState(Qt::Unchecked);
+    if(ui->checkBoxFollowPredict->isChecked())
+        ui->checkBoxFollowPredict->setCheckState(Qt::Unchecked);
 }
 
 void MainWindow::on_yawKpSpinBox_valueChanged(double arg1)
