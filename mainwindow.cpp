@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     pid_yaw.kp=ui->yawKpSpinBox->value();
     pid_yaw.ki=ui->yawKiSpinBox->value();
     pid_yaw.kd=ui->yawKdSpinBox->value();
-    angleSolver.setCameraParam("/home/rm/HNU_RMUT_Version/mmp.xml", 1);
+    angleSolver.setCameraParam("/home/rm/HNU_RMUT_Version/camera_params.xml", 1);
     pointer_=this;
     this->move(100,100);
 }
@@ -217,15 +217,18 @@ void MainWindow::timerEvent(QTimerEvent*)
             //PID闭环
             if(ui->checkBoxFollowCenter->isChecked())
             {
-                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(p.x,width/2+ui->hBaisSpinBox->value());
-                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(p.y,height/2+ui->vBaisSpinBox->value());
+                auto pnt=Point2f(tmp.armorCenter.x,tmp.armorCenter.y);
+                float y,p;
+                angleSolver.getAngle(pnt,y,p);
+                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(y,0);
+                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(p,0);
             }
             else if(ui->checkBoxFollowArmor->isChecked())
             {
 //                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.armorCenter.x,width/2+ui->hBaisSpinBox->value());
 //                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.armorCenter.y,height/2+ui->vBaisSpinBox->value());
-                auto pnt=Point2f(tmp.armorCenter.x,tmp.armorCenter.y);
-//                auto pnt=Point2f(p.x,p.y-ui->vBaisSpinBox->value());
+//                auto pnt=Point2f(tmp.armorCenter.x,tmp.armorCenter.y);
+                auto pnt=Point2f(p.x,p.y-ui->vBaisSpinBox->value());
                 float y,p;
                 angleSolver.getAngle(pnt,y,p);
                 ui->calcPitLable->setText(QString::number(p));
