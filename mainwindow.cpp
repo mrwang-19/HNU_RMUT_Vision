@@ -130,6 +130,7 @@ void MainWindow::on_OpenButton_clicked()
  */
 void MainWindow::timerEvent(QTimerEvent*)
 {
+    static bool flag=true;
     if(processor!=nullptr && transceiver!=nullptr)
     {
         if(processor->historyTarget.size()>0)
@@ -153,9 +154,14 @@ void MainWindow::timerEvent(QTimerEvent*)
                 if(timePassed>predictTime)
                 {
                     shootTimer.restart();
+                    flag=true;
                 }
-                if(timePassed>(predictTime-0.3*predictor->getSpeed(predictTime-timePassed)))
+                auto lead=0.3*predictor->getSpeed(predictTime-timePassed);
+                if((timePassed>(predictTime-lead))&&flag)
+                {
                     transceiver->sendFrame.shootCommand=1;
+                    flag=false;
+                }
                 p=predictor->predictPoint(predictTime-timePassed);
 //                p=predictor->predictPoint(0.1);
 
@@ -167,7 +173,7 @@ void MainWindow::timerEvent(QTimerEvent*)
                     angleSolver.getAngle(p,tmp_yaw,tmp_pit);
                     //PID闭环并加入偏置补偿
                     transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp_yaw,ui->hBaisSpinBox->value());
-                    transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
+                    transceiver->sendFrame.pitchAngleSet=-pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
                 }
                 //跟随当前点
                 else if(ui->checkBoxFollowCurrent->isChecked())
@@ -175,7 +181,7 @@ void MainWindow::timerEvent(QTimerEvent*)
                     angleSolver.getAngle(tmp.armorCenter,tmp_yaw,tmp_pit);
                     //PID闭环并加入偏置补偿
                     transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp_yaw,ui->hBaisSpinBox->value());
-                    transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
+                    transceiver->sendFrame.pitchAngleSet=-pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
                 }
                 else
                 {
@@ -201,6 +207,11 @@ void MainWindow::timerEvent(QTimerEvent*)
             ui->calcPitLable->setText(QString::number(tmp_yaw));
             ui->calcYawLable->setText(QString::number(tmp_pit));
 
+        }
+        else
+        {
+            transceiver->sendFrame.yawAngleSet=0;
+            transceiver->sendFrame.pitchAngleSet=0;
         }
         //重绘图表
         ui->chartPainter->replot();
