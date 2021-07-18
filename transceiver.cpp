@@ -1,6 +1,7 @@
 #include "transceiver.h"
 #include <QDebug>
-
+#include <QTime>
+#include <QThread>
 using namespace std;
 
 Transceiver::Transceiver(QString portName, QObject *parent) : QObject(parent)
@@ -30,9 +31,13 @@ void Transceiver::timerEvent(QTimerEvent *)
         serial->flush();
     }
     if(sendFrame.shootCommand)
+    {
         count++;
+        //打印时间戳
+        qDebug()<<QThread::currentThread()<<QTime::currentTime();
+    }
     //最多发2次
-    if(count>1)
+    if(count>3)
     {
         count=0;
         sendFrame.shootCommand=0;

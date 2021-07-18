@@ -68,7 +68,7 @@ float myArctan(Point2f p)
 void ImageProcessor::detectTarget(uint64_t timestamp)
 {
     static uint64 frame_count=0;
-    static float lastCenterX,lastCenterY;
+//    static float lastCenterX,lastCenterY;
     Mat original,binaryImage;
     Target target;
     target.index=frame_count;

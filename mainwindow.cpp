@@ -60,7 +60,7 @@ void MainWindow::on_OpenButton_clicked()
             else
                 return;
             //创建处理线程
-            processor=new ImageProcessor(height,width,1000000/exposureTime,ui->blueDecaySpinBox->value());
+            processor=new ImageProcessor(height,width,ui->frameRateSpinBox->value(),ui->blueDecaySpinBox->value());
             processor->moveToThread(&processorHandler);
             connect(&cam,static_cast<void (Camera::*)(char*,int,int,uint64_t)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(char *,int,int,uint64_t)>(&ImageProcessor::onNewImage));
             //开采
@@ -146,8 +146,6 @@ void MainWindow::timerEvent(QTimerEvent*)
             {
                 //预测
                 Point2f p;
-                //打印时间戳
-                qDebug()<<QThread::currentThread()<<shootTimer.currentTime();
                 float timePassed=shootTimer.elapsed()/1000.0f;
 //                qDebug()<<timePassed;
                 float predictTime=ui->predictTimeSpinBox->value();
@@ -156,11 +154,14 @@ void MainWindow::timerEvent(QTimerEvent*)
                     shootTimer.restart();
                     flag=true;
                 }
-                auto lead=0.3*predictor->getSpeed(predictTime-timePassed);
+//                auto lead=0.3*predictor->getSpeed(predictTime-timePassed);
+                float lead=ui->leadTimeSpinBox->value();
                 if((timePassed>(predictTime-lead))&&flag)
                 {
                     transceiver->sendFrame.shootCommand=1;
                     flag=false;
+                    //打印时间戳
+                    qDebug()<<QThread::currentThread()<<shootTimer.currentTime();
                 }
                 p=predictor->predictPoint(predictTime-timePassed);
 //                p=predictor->predictPoint(0.1);
@@ -204,8 +205,8 @@ void MainWindow::timerEvent(QTimerEvent*)
             ui->pitchAngleLable->setText(tr("%1").arg(transceiver->recvFrame.pitchAngleGet));
             ui->yawAngleLable->setText(tr("%1").arg(transceiver->recvFrame.yawAngleGet));
 
-            ui->calcPitLable->setText(QString::number(tmp_yaw));
-            ui->calcYawLable->setText(QString::number(tmp_pit));
+            ui->calcPitLable->setText(QString::number(tmp_pit));
+            ui->calcYawLable->setText(QString::number(tmp_yaw));
 
         }
         else
