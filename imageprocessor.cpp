@@ -105,7 +105,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
         {
             auto rect=minAreaRect(contours[i]);
             auto area = contourArea(contours[i]);
-            if(area>50)
+            if(area>80)
             {
                 auto tmp = abs(1-area/rect.size.area());
                 if(tmp<max_area&&area>1000)
@@ -117,7 +117,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                 float r;
                 minEnclosingCircle(contours[i],center,r);
                 tmp= abs(1-area/(CV_2PI*r*r));
-                if(tmp<max_rito)
+                if(tmp<max_rito&&area<1000)
                 {
                     max_rito=tmp;
                     target.center=center;
@@ -135,14 +135,14 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
         Target before;
         if(index>=0)
             before=historyTarget[index];
-//        if(target.center.x-before.center.x>100)
-//        {
-//            Mat debug=original.clone();
-//            circle(debug,target.center,15,Scalar(0,255,0),-1);
-//            drawContours(fliped,contours,max,Scalar(0,255,0),5);
-//            drawContours(fliped,contours,min,Scalar(255,0,0),5);
-//            imwrite(to_string(rand())+".bmp",debug);
-//        }
+        if(target.center.x-before.center.x>100)
+        {
+            Mat debug=original.clone();
+            circle(debug,target.center,15,Scalar(0,255,0),-1);
+            drawContours(debug,contours,-1,Scalar(255,0,0),5);
+//            drawContours(debug,contours,min,Scalar(255,0,0),5);
+            imwrite(to_string(rand())+".bmp",debug);
+        }
         if(index>=0)
         {
             before=historyTarget[index];

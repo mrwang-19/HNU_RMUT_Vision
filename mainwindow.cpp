@@ -151,20 +151,23 @@ void MainWindow::timerEvent(QTimerEvent*)
                 float timePassed=shootTimer.elapsed()/1000.0f;
 //                qDebug()<<timePassed;
                 float predictTime=ui->predictTimeSpinBox->value();
+//                auto lead=0.3*predictor->getSpeed(predictTime-timePassed);
+                float lead=0.1*predictor->getSpeed(predictTime-timePassed       )+ui->leadTimeSpinBox->value();
+//                qDebug()<<timePassed<<","<<lead<<","<<flag;
+                if((timePassed>(predictTime-lead))&&flag)
+                {
+                    transceiver->sendFrame.shootCommand=1;
+                    flag=false;
+                    qDebug()<<lead;
+                    //打印时间戳
+//                    qDebug()<<QThread::currentThread()<<shootTimer.currentTime();
+                }
                 if(timePassed>predictTime)
                 {
                     shootTimer.restart();
                     flag=true;
                 }
-//                auto lead=0.3*predictor->getSpeed(predictTime-timePassed);
-                float lead=ui->leadTimeSpinBox->value();
-                if((timePassed>(predictTime-lead))&&flag)
-                {
-                    transceiver->sendFrame.shootCommand=1;
-                    flag=false;
-                    //打印时间戳
-                    qDebug()<<QThread::currentThread()<<shootTimer.currentTime();
-                }
+
                 p=predictor->predictPoint(predictTime-timePassed);
 //                p=predictor->predictPoint(0.1);
 
