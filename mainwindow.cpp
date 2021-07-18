@@ -54,13 +54,14 @@ void MainWindow::on_OpenButton_clicked()
                 exposureTime=ui->exposureSpinBox->value();
                 width=ui->widthSpinBox->value();
                 height=ui->heightSpinBox->value();
+                frameRate=ui->frameRateSpinBox->value();
                 //初始化相机参数
                 cam_init();
             }
             else
                 return;
             //创建处理线程
-            processor=new ImageProcessor(height,width,ui->frameRateSpinBox->value(),ui->blueDecaySpinBox->value());
+            processor=new ImageProcessor(height,width,(uint16_t)frameRate,ui->blueDecaySpinBox->value());
             processor->moveToThread(&processorHandler);
             connect(&cam,static_cast<void (Camera::*)(char*,int,int,uint64_t)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(char *,int,int,uint64_t)>(&ImageProcessor::onNewImage));
             //开采
@@ -72,8 +73,9 @@ void MainWindow::on_OpenButton_clicked()
                 return;
             height=cam.getHeight();
             width=cam.getWidth();
+            frameRate=cam.getFrameRate();
             //创建处理线程
-            processor=new ImageProcessor(height,width,(uint16_t)cam.getFrameRate(),ui->blueDecaySpinBox->value());
+            processor=new ImageProcessor(height,width,(uint16_t)frameRate,ui->blueDecaySpinBox->value());
             processor->moveToThread(&processorHandler);
             connect(&cam,static_cast<void (Camera::*)(Mat)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(Mat)>(&ImageProcessor::onNewImage));
             //开采
@@ -94,7 +96,7 @@ void MainWindow::on_OpenButton_clicked()
         connect(processor,&ImageProcessor::newTarget,ui->chartPainter,&ChartPainter::onTarget);
         chartPainterHandler.start();
         //创建预测线程
-        predictor = new Predictor(processor,150);
+        predictor = new Predictor(processor,(frameRate*1.5));
         connect(&predictorHandler,&QThread::finished,predictor,&Predictor::deleteLater);
         connect(predictor,&Predictor::newPhi,ui->chartPainter,&ChartPainter::onPhi);
         connect(predictor,&Predictor::newSpeed,ui->chartPainter,&ChartPainter::onSpeed);

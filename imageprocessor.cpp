@@ -17,6 +17,7 @@ ImageProcessor::ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate
     blueDecay(blueDecay)
 {
     qRegisterMetaType<Target>("Target");
+    tao=frameRate/2;
 }
 ImageProcessor::~ImageProcessor()
 {

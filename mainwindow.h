@@ -80,6 +80,7 @@ private:
     uint64 lastTimestamp;                   //上次迭代时间
     int timerID;                            //定时器ID
     int width,height,exposureTime;          //图像宽度、高度、曝光时长
+    float frameRate=0.0f;                   //帧率
     AngleSolver angleSolver;                //角度解算类
     QTime shootTimer;                       //计算射击时间使用
     float tmp_yaw=0.0f,tmp_pit=0.0f;        //针孔模型解算得到的未加补偿时的临时云台角度
