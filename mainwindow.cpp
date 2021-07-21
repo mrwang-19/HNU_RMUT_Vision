@@ -152,7 +152,7 @@ void MainWindow::timerEvent(QTimerEvent*)
 //                qDebug()<<timePassed;
                 float predictTime=ui->predictTimeSpinBox->value();
 //                auto lead=0.3*predictor->getSpeed(predictTime-timePassed);
-                float lead=0.1*predictor->getSpeed(predictTime-timePassed       )+ui->leadTimeSpinBox->value();
+                float lead=0.1*predictor->getSpeed(0.1)+ui->leadTimeSpinBox->value();
 //                qDebug()<<timePassed<<","<<lead<<","<<flag;
                 if((timePassed>(predictTime-lead))&&flag)
                 {
