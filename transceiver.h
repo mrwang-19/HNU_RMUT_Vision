@@ -22,7 +22,7 @@ struct __attribute__((packed)) RecvFrame
     uint8_t rotateDricetion;   //旋转方向
     float timeBais;         //预测时间偏置
     float compensateBais;   //弹道补偿偏置
-    int shootStatusGet;     //发射反馈
+    uint8_t gimbal_mode;	//云台模式
 };
 
 

@@ -24,6 +24,7 @@ float pid::pid_calc(float get, float set)
 }
 void pid::pid_reset() {
     iout=0;
+    dout=0;
     err[NOW]=0;
     err[LAST]=0;
 }

@@ -53,6 +53,7 @@ void ChartPainter::onTarget(Target target)
           graph(0)->addData(key, target.armorAngle);
 //            graph(0)->addData(key-0.5, target.armorAngle);
           graph(1)->addData(key, target.angleDifference);
+          qDebug()<<target.timestamp<<target.angleDifference;
           // rescale value (vertical) axis to fit the current data:
           graph(0)->rescaleValueAxis();
           graph(1)->rescaleValueAxis(true);

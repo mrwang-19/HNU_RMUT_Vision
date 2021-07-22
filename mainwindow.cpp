@@ -173,26 +173,35 @@ void MainWindow::timerEvent(QTimerEvent*)
 
                 //跟随
 
-                //跟随预测点
-                if(ui->checkBoxFollowPredict->isChecked())
+                //如果处于自瞄模式则跟随预测点
+                if(transceiver->recvFrame.gimbal_mode==4)
                 {
-                    angleSolver.getAngle(p,tmp_yaw,tmp_pit);
-                    //PID闭环并加入偏置补偿
-                    transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp_yaw,ui->hBaisSpinBox->value());
-                    transceiver->sendFrame.pitchAngleSet=-pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
+                    if(ui->checkBoxFollowPredict->isChecked())
+                    {
+                        angleSolver.getAngle(p,tmp_yaw,tmp_pit);
+                        //PID闭环并加入偏置补偿
+                        transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp_yaw,ui->hBaisSpinBox->value());
+                        transceiver->sendFrame.pitchAngleSet=-pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
+                    }
+                        //跟随当前点
+                    else if(ui->checkBoxFollowCurrent->isChecked())
+                    {
+                        angleSolver.getAngle(tmp.armorCenter,tmp_yaw,tmp_pit);
+                        //PID闭环并加入偏置补偿
+                        transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp_yaw,ui->hBaisSpinBox->value());
+                        transceiver->sendFrame.pitchAngleSet=-pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
+                    }
+                    else
+                    {
+                        transceiver->sendFrame.yawAngleSet=0;
+                        transceiver->sendFrame.pitchAngleSet=0;
+                    }
                 }
-                //跟随当前点
-                else if(ui->checkBoxFollowCurrent->isChecked())
-                {
-                    angleSolver.getAngle(tmp.armorCenter,tmp_yaw,tmp_pit);
-                    //PID闭环并加入偏置补偿
-                    transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp_yaw,ui->hBaisSpinBox->value());
-                    transceiver->sendFrame.pitchAngleSet=-pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
-                }
+                //非自瞄模式
                 else
                 {
-                    transceiver->sendFrame.yawAngleSet=0;
-                    transceiver->sendFrame.pitchAngleSet=0;
+                    pid_yaw.pid_reset();
+                    pid_pit.pid_reset();
                 }
                 //标出关键点
                 circle(img,tmp.center,15,Scalar(0,255,0),-1);
@@ -202,7 +211,12 @@ void MainWindow::timerEvent(QTimerEvent*)
                 ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
                 ui->armorLable->setText(QString::number(tmp.armorCenter.x,'f',4)+","+QString::number(tmp.armorCenter.y,'f',4));
             }
-
+            //未识别到目标
+            else
+            {
+                transceiver->sendFrame.yawAngleSet=0;
+                transceiver->sendFrame.pitchAngleSet=0;
+            }
             //更新ui
             QImage ori=QImage((const uchar*)img.data,width,height,QImage::Format_RGB888);
             ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
@@ -213,11 +227,6 @@ void MainWindow::timerEvent(QTimerEvent*)
             ui->calcPitLable->setText(QString::number(tmp_pit));
             ui->calcYawLable->setText(QString::number(tmp_yaw));
 
-        }
-        else
-        {
-            transceiver->sendFrame.yawAngleSet=0;
-            transceiver->sendFrame.pitchAngleSet=0;
         }
         //重绘图表
         ui->chartPainter->replot();
