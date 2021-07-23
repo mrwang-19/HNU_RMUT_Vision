@@ -102,6 +102,9 @@ void MainWindow::on_OpenButton_clicked()
         connect(predictor,&Predictor::newSpeed,ui->chartPainter,&ChartPainter::onSpeed);
         predictor->moveToThread(&predictorHandler);
         predictorHandler.start();
+        //重置PID
+        pid_yaw.pid_reset();
+        pid_pit.pid_reset();
         //启动定时器
         timerID=startTimer(33ms);
         ui->OpenButton->setText("关闭");
@@ -135,6 +138,8 @@ void MainWindow::timerEvent(QTimerEvent*)
     static bool flag=true;
     if(processor!=nullptr && transceiver!=nullptr)
     {
+        //设置转向
+        processor->rotateDirection=transceiver->recvFrame.rotateDricetion;
         if(processor->historyTarget.size()>0)
         {
             Target tmp=processor->historyTarget.last();
@@ -278,12 +283,18 @@ void MainWindow::on_checkBoxFollowPredict_stateChanged(int)
 {
     if(ui->checkBoxFollowCurrent->isChecked())
         ui->checkBoxFollowCurrent->setCheckState(Qt::Unchecked);
+    //重置PID
+    pid_yaw.pid_reset();
+    pid_pit.pid_reset();
 }
 
 void MainWindow::on_checkBoxFollowCurrent_stateChanged(int)
 {
     if(ui->checkBoxFollowPredict->isChecked())
         ui->checkBoxFollowPredict->setCheckState(Qt::Unchecked);
+    //重置PID
+    pid_yaw.pid_reset();
+    pid_pit.pid_reset();
 }
 
 void MainWindow::on_yawKpSpinBox_valueChanged(double arg1)

@@ -53,7 +53,7 @@ public:
     double blueDecay;               //蓝色衰减
     bool recordingFlag=false;       //录制标记
     float t;                        //规则时间
-    bool rotateDirection=false;     //旋转方向，true顺时针，false逆时针
+    bool rotateDirection=true;     //旋转方向，true顺时针，false逆时针
     int tao=50;                     //计算角度差的间隔帧数
     QVector<Mat> frameQueue;        //帧队列
     QMutex frameLock;               //帧队列锁
