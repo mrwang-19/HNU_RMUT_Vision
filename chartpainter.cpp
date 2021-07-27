@@ -1,5 +1,6 @@
 #include <QDateTime>
 #include "chartpainter.h"
+#define REAL_ENERGY
 
 ChartPainter::ChartPainter(QWidget *parent) : QCustomPlot(parent)
 {    
@@ -51,9 +52,13 @@ void ChartPainter::onTarget(Target target)
         {
           // add data to lines:
           graph(0)->addData(key, target.armorAngle);
-//            graph(0)->addData(key-0.5, target.armorAngle);
-          graph(1)->addData(key, target.angleDifference);
-          qDebug()<<target.timestamp<<target.angleDifference;
+#ifdef SIMPLE_ENERGY
+            graph(1)->addData(key, target.angleDifference);
+#endif
+#ifdef REAL_ENERGY
+            graph(1)->addData(key, target.lastArmorAngle);
+#endif
+          //qDebug()<<target.timestamp<<target.angleDifference;
           // rescale value (vertical) axis to fit the current data:
           graph(0)->rescaleValueAxis();
           graph(1)->rescaleValueAxis(true);

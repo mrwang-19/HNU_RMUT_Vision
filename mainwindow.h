@@ -57,6 +57,16 @@ private slots:
 
     void on_shootButton_clicked();
 
+    void on_thresholdspinBox_valueChanged(int arg1);
+
+    void on_dilateKernelSizeSpinBox_valueChanged(int arg1);
+
+    void on_maxRadiusSpinBox_valueChanged(int arg1);
+
+    void on_minRadiusSpinBox_valueChanged(int arg1);
+
+    void on_rRadiusSpinBox_valueChanged(int arg1);
+
 signals:
     void startRecording(QString path);
     void stopRecording();

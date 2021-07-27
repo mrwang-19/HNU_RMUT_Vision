@@ -117,8 +117,8 @@ void Camera::timerEvent(QTimerEvent*)
     if(videoFile->isOpened())
     {
         Mat frame;
-        videoFile->read(frame);
-        emit newImage(frame);
+        if(videoFile->read(frame))
+            emit newImage(frame);
     }
 }
 

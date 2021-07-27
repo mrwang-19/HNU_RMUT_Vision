@@ -22,6 +22,7 @@ public:
     explicit Predictor(ImageProcessor * processor,int samples,QObject *parent = nullptr);
     ~Predictor();
 //    float predictTime;        //预测时间
+    uint tau;                //计算角度差的间隔帧数
     float tao;                  //观测时间
     int samples;                //样本数量
     double phi;                 //拟合得到的相位

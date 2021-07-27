@@ -7,7 +7,8 @@ Predictor::Predictor(ImageProcessor * processor,int samples,QObject *parent) :
     samples(samples),
     processor(processor)
 {
-    tao=(float)processor->tao/processor->frameRate;
+    tau=processor->frameRate/2;
+    tao=(float)tau/processor->frameRate;
     // 配置求解器
     options.linear_solver_type = ceres::DENSE_QR;   // 增量方程如何求解
     options.minimizer_progress_to_stdout = false;   // 不输出到控制台
@@ -41,10 +42,11 @@ Predictor::~Predictor()
 {
     killTimer(timerID);
 }
+
 void Predictor::timerEvent(QTimerEvent*)
 {
     double _phi[1]={0.0};
-    if(processor->historyTarget.size()>(samples+processor->tao))
+    if(processor->historyTarget.size()>(samples+tau))
     {
         problem=new ceres::Problem();
         QVector<Target> list(processor->historyTarget);
@@ -56,17 +58,23 @@ void Predictor::timerEvent(QTimerEvent*)
         int count=0;
         for(int i=startIndex;i<startIndex+samples;i++)
         {
-//            cout<<list[i].angleDifference<<",";
-            if(list[i].angleDifference>0.1)
+            float angleDifference;
+            //如果跳变帧包含在区间内，则用跳变后的角度折算至跳变前，计算角度差
+            qDebug()<<"last jump:"<<processor->indexOfLastJump;
+            if(i-tau < processor->indexOfLastJump)
+                angleDifference=list[i].lastArmorAngle-list[i-tau].armorAngle;
+            else
+                angleDifference=list[i].armorAngle-list[i-tau].armorAngle;
+            if(angleDifference>0.1)
             {
                 count++;
-                double tmp=((double)(currentTarget.timestamp-list[i].timestamp))/-1000000000;//纳秒换秒
+                double tmp=((double)(list[i].timestamp-currentTarget.timestamp))/1000000000;//纳秒换秒
 //                qDebug()<<tmp<<","<<(double)list[i].angleDifference;
                 problem->AddResidualBlock (     // 向问题中添加误差项
                         // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
                         new ceres::AutoDiffCostFunction<CURVE_FITTING_COST, 1, 1> (
                                 //以开始拟合的一帧作为时间轴原点，其余帧与其计算相对时间
-                                new CURVE_FITTING_COST (tmp,(double)list[i].angleDifference,tao)
+                                new CURVE_FITTING_COST (tmp,(double)angleDifference,tao)
                         ),
                         nullptr,            // 核函数，这里不使用，为空
                         _phi                 // 待估计参数
@@ -96,7 +104,6 @@ void Predictor::timerEvent(QTimerEvent*)
         delete problem;
     }
 }
-
 float pos_fun(float t,float phi)
 {
     return (1.305 * t) - (0.416666666666667 * cos(1.884 *t + phi ));

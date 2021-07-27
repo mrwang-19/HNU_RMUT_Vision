@@ -61,7 +61,10 @@ void MainWindow::on_OpenButton_clicked()
             else
                 return;
             //创建处理线程
-            processor=new ImageProcessor(height,width,(uint16_t)frameRate,ui->blueDecaySpinBox->value());
+            ImageProcessor::blueDecay=ui->blueDecaySpinBox->value();
+            ImageProcessor::binaryThreshold=ui->thresholdspinBox->value();
+            ImageProcessor::dilateKernelSize=ui->dilateKernelSizeSpinBox->value();
+            processor=new ImageProcessor(height,width,(uint16_t)frameRate);
             processor->moveToThread(&processorHandler);
             connect(&cam,static_cast<void (Camera::*)(char*,int,int,uint64_t)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(char *,int,int,uint64_t)>(&ImageProcessor::onNewImage));
             //开采
@@ -74,8 +77,11 @@ void MainWindow::on_OpenButton_clicked()
             height=cam.getHeight();
             width=cam.getWidth();
             frameRate=cam.getFrameRate();
-            //创建处理线程
-            processor=new ImageProcessor(height,width,(uint16_t)frameRate,ui->blueDecaySpinBox->value());
+            //初始化参数,创建处理线程
+            ImageProcessor::blueDecay=ui->blueDecaySpinBox->value();
+            ImageProcessor::binaryThreshold=ui->thresholdspinBox->value();
+            ImageProcessor::dilateKernelSize=ui->dilateKernelSizeSpinBox->value();
+            processor=new ImageProcessor(height,width,(uint16_t)frameRate);
             processor->moveToThread(&processorHandler);
             connect(&cam,static_cast<void (Camera::*)(Mat)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(Mat)>(&ImageProcessor::onNewImage));
             //开采
@@ -140,7 +146,7 @@ void MainWindow::timerEvent(QTimerEvent*)
     {
         //设置转向
         processor->rotateDirection=transceiver->recvFrame.rotateDricetion;
-        if(processor->historyTarget.size()>0)
+        if(processor->historyTarget.size()>0 && processor->historyTarget.isDetached())
         {
             Target tmp=processor->historyTarget.last();
 
@@ -163,7 +169,7 @@ void MainWindow::timerEvent(QTimerEvent*)
                 {
                     transceiver->sendFrame.shootCommand=1;
                     flag=false;
-                    qDebug()<<lead;
+                    //qDebug()<<lead;
                     //打印时间戳
 //                    qDebug()<<QThread::currentThread()<<shootTimer.currentTime();
                 }
@@ -209,8 +215,17 @@ void MainWindow::timerEvent(QTimerEvent*)
                     pid_pit.pid_reset();
                 }
                 //标出关键点
-                circle(img,tmp.center,15,Scalar(0,255,0),-1);
-                circle(img,tmp.armorCenter,15,Scalar(255,0,0),-1);
+                circle(img,tmp.center,10,Scalar(0,255,0),-1);
+                circle(img,tmp.center,ImageProcessor::rRadius,Scalar(255,0,255),5);
+                circle(img,tmp.armorCenter,10,Scalar(255,0,0),-1);
+                circle(img,tmp.armorCenter,ImageProcessor::minRadius,Scalar(255,255,0),5);
+                circle(img,tmp.armorCenter,ImageProcessor::maxRadius,Scalar(0,255,255),5);
+                cv::Point2f* vertices = new cv::Point2f[4];
+                tmp.armorRect.points(vertices);
+                for (size_t i = 0; i < 4; i++)
+                {
+                    line(img, vertices[i], vertices[(i + 1) % 4], cv::Scalar(0, 255, 0), 4, 8, 0);
+                }
                 circle(img,p,15,Scalar(255,255,0),-1);
                 ui->angleLable->setNum(tmp.armorAngle);
                 ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
@@ -273,12 +288,6 @@ bool MainWindow::cam_init()
     return status;
 }
 
-void MainWindow::on_blueDecaySpinBox_valueChanged(double arg1)
-{
-    if(processor!=nullptr)
-        processor->blueDecay=arg1;
-}
-
 void MainWindow::on_checkBoxFollowPredict_stateChanged(int)
 {
     if(ui->checkBoxFollowCurrent->isChecked())
@@ -330,4 +339,34 @@ void MainWindow::on_pitKiSpinBox_valueChanged(double arg1)
 void MainWindow::on_shootButton_clicked()
 {
     transceiver->sendFrame.shootCommand=1;
+}
+void MainWindow::on_blueDecaySpinBox_valueChanged(double arg1)
+{
+    ImageProcessor::blueDecay=arg1;
+}
+
+void MainWindow::on_thresholdspinBox_valueChanged(int arg1)
+{
+    ImageProcessor::binaryThreshold=arg1;
+}
+
+void MainWindow::on_dilateKernelSizeSpinBox_valueChanged(int arg1)
+{
+    ImageProcessor::dilateKernelSize=arg1;
+}
+
+void MainWindow::on_maxRadiusSpinBox_valueChanged(int arg1)
+{
+    ImageProcessor::maxRadius=arg1;
+}
+
+
+void MainWindow::on_minRadiusSpinBox_valueChanged(int arg1)
+{
+    ImageProcessor::minRadius=arg1;
+}
+
+void MainWindow::on_rRadiusSpinBox_valueChanged(int arg1)
+{
+    ImageProcessor::rRadius=arg1;
 }
