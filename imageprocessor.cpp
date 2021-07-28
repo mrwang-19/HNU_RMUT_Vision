@@ -243,7 +243,8 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                 {
                     auto area = contourArea(contours[sub]);//轮廓面积
                     auto rect = minAreaRect(contours[sub]);//轮廓外接矩形
-                    float aspectRatio=rect.size.aspectRatio();
+                    auto mmp=rect.size;
+                    float aspectRatio=mmp.height/mmp.width;
                     float areaRatio=area/(rect.size.width*rect.size.height);//面积比，用来衡量轮廓与矩形的相似度
                     if(aspectRatio>1)
                         aspectRatio=1/aspectRatio;

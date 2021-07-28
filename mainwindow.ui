@@ -235,6 +235,9 @@
        <property name="text">
         <string>跟随预测点</string>
        </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -287,7 +290,7 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>-21</y>
+       <y>0</y>
        <width>400</width>
        <height>1000</height>
       </rect>

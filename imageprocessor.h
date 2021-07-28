@@ -64,7 +64,7 @@ public:
     float t;                                //规则时间
     bool rotateDirection=true;              //旋转方向，true顺时针，false逆时针
     float lastJumpAngle;                    //上次跳变的角度，用于折算
-    int indexOfLastJump;                    //targetHistory中上次跳变分界帧的索引
+    int64_t indexOfLastJump=-1;                    //targetHistory中上次跳变分界帧的索引
     QVector<Mat> frameQueue;                //帧队列
     QMutex frameLock;                       //帧队列锁
     QVector<Target> historyTarget;          //历史目标队列
