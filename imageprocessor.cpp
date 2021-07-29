@@ -103,7 +103,8 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
     static uint64 frame_count=0;
 //    static float lastCenterX,lastCenterY;
     Mat original,binaryImage;
-    Target target;
+    static Target target;
+    target.hasTarget = false;
     target.index=frame_count;
     target.timestamp=timestamp;
     frameLock.lock();
@@ -249,7 +250,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                     if(aspectRatio>1)
                         aspectRatio=1/aspectRatio;
                     //qDebug()<<"面积:"<<area<<",长宽比:"<<aspectRatio<<",面积比:"<<areaRatio<<endl;
-                    if(area>1000 && aspectRatio<0.7 && areaRatio>0.8)
+                    if(area>400 && aspectRatio<0.76 && areaRatio>0.75)
                     {
                         target.armorRect=rect;
                         target.hasTarget = true;
@@ -257,6 +258,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                     //未通过校验
                     else
                     {
+                        qDebug()<<"面积:"<<area<<",长宽比:"<<aspectRatio<<",面积比:"<<areaRatio<<endl;
                         goto finish;
                     }
                 }
@@ -266,8 +268,8 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                 Point2f center;
                 float radius;
                 minEnclosingCircle(contours[i],center,radius);
-                //qDebug()<<"中心R半径:"<<radius<<endl;
-                if(radius<rRadius)
+                //qDebug()<<"中心R半径:"<<radius<<center.x<<center.y<<endl;
+                if(radius<rRadius && radius>8)
                     possibleCenter.push_back(center);
             }
         }
@@ -294,12 +296,42 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
         //寻找中心R
         for (Point2f p:possibleCenter)
         {
+            float x1=target.armorCenter.x-p.x;
+            float y1=target.armorCenter.y-p.y;
+            float x2,x3,x4,y2,y3,y4;
+            Point2f vectors[4];
+            target.armorRect.points(vectors);
+            float dd1= distance(vectors[0],vectors[1]);
+            float dd2= distance(vectors[1],vectors[2]);
+            float r;
+            if(dd1<dd2)
+            {
+                x2=target.armorCenter.x-vectors[0].x;
+                y2=target.armorCenter.y-vectors[0].y;
+                x3=target.armorCenter.x-vectors[1].x;
+                y3=target.armorCenter.y-vectors[1].y;
+                dd2=dd1;
+            }
+            else
+            {
+                x2=target.armorCenter.x-vectors[1].x;
+                y2=target.armorCenter.y-vectors[1].y;
+                x3=target.armorCenter.x-vectors[2].x;
+                y3=target.armorCenter.y-vectors[2].y;
+                dd1=dd2;
+            }
+            float angle=0;
             float d1 = distance(p,target.armorCenter);
             float d2 = 0.0f;
+
+            x4=x2-x3;y4=y2-y3;
+            angle=acos((x4*x1+y1*y4)/dd1/d1)*57.3;
+            //qDebug()<<angle;
+            //qDebug()<<"angle:"<<angle<<fabs(target.armorRect.angle);
             if(index>10&&before.hasTarget)
              d2 = distance(p,before.center);
             //qDebug()<<"中心距离:"<<d;
-            if(d1>minRadius && d1<maxRadius && d2<50)
+            if(d1>minRadius && d1 < maxRadius && (angle<10||angle>170) )
             {
                 target.center=p;
                 target.radius=d1;
@@ -315,7 +347,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
 
             float delta=target.armorAngle-before.armorAngle;
             float Delta= fabs(delta);
-            if(Delta>0.17452 && Delta < 6.0)
+            if(historyTarget.size()>100&&Delta>0.17452 && Delta < 6.0)
             {
                 lastJumpAngle=getJumpAngle(delta);
                 qDebug()<<delta<<lastJumpAngle;
@@ -327,13 +359,20 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                 circle(debug,target.armorCenter,15,Scalar(0,255,255),-1);
                 drawContours(debug,contours,-1,Scalar(0,255,0),5);
 //                  drawContours(debug,contours,min,Scalar(255,0,0),5);
-                imwrite("/home/rm/图片/"+to_string(rand())+".bmp",debug);
+                imwrite("/home/rm/图片/JUMP_"+to_string(target.timestamp)+".bmp",debug);
             }
             if(rotateDirection)
                 target.lastArmorAngle=target.armorAngle-lastJumpAngle+CV_2PI;
             else
                 target.lastArmorAngle=target.armorAngle+lastJumpAngle;
             target.lastArmorAngle= fmod(target.lastArmorAngle,CV_2PI);
+        }
+        else
+        {
+            Mat debug=original.clone();
+            drawContours(debug,contours,-1,Scalar(0,255,0),2);
+//                  drawContours(debug,contours,min,Scalar(255,0,0),5);
+            imwrite("/home/rm/图片/NO_"+to_string(target.timestamp)+".bmp",debug);
         }
     }
     else

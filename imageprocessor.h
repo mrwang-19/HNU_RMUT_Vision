@@ -76,9 +76,9 @@ public slots:
     void stopRecording();
     void onNewImage(char* img_data,int height,int width,uint64_t timestamp);
     void onNewImage(Mat Frame);
+    Mat pretreatment(Mat frame);
 private:
     //函数
-    Mat pretreatment(Mat frame);
     void detectTarget(uint64_t timestamp);
 
     //变量

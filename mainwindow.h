@@ -30,11 +30,13 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    void on_OpenButton_clicked();
     static MainWindow * pointer_;
+    void start();
     ~MainWindow();
 
 private slots:
+    void on_OpenButton_clicked();
+
     void on_RecordButton_clicked();
 
     void on_blueDecaySpinBox_valueChanged(double arg1);

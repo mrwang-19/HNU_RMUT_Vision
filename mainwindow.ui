@@ -65,38 +65,6 @@
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="verticalLayoutWidget_2">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>371</width>
-      <height>601</height>
-     </rect>
-    </property>
-    <layout class="QVBoxLayout" name="verticalLayout_3">
-     <item>
-      <widget class="QLabel" name="label_3">
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>20</height>
-        </size>
-       </property>
-       <property name="text">
-        <string>原始图像</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="OriginalImage">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
    <widget class="QWidget" name="gridLayoutWidget_2">
     <property name="geometry">
      <rect>
@@ -393,7 +361,7 @@
           <double>0.050000000000000</double>
          </property>
          <property name="value">
-          <double>0.250000000000000</double>
+          <double>0.400000000000000</double>
          </property>
         </widget>
        </item>
@@ -414,7 +382,7 @@
        <item row="4" column="1">
         <widget class="QLineEdit" name="videoPathEdit">
          <property name="text">
-          <string>/media/rm/emmm/机器人视角 红色 背景暗_W2xEX_VFI_avi.mp4</string>
+          <string>/media/rm/emmm/SZU_R_100fps.mp4</string>
          </property>
         </widget>
        </item>
@@ -479,7 +447,7 @@
           <number>300</number>
          </property>
          <property name="value">
-          <number>200</number>
+          <number>144</number>
          </property>
         </widget>
        </item>
@@ -648,6 +616,9 @@
        </item>
        <item row="10" column="1">
         <widget class="QSpinBox" name="dilateKernelSizeSpinBox">
+         <property name="minimum">
+          <number>1</number>
+         </property>
          <property name="maximum">
           <number>255</number>
          </property>
@@ -830,12 +801,59 @@
      </widget>
     </widget>
    </widget>
+   <widget class="QLabel" name="OriginalImage">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>23</y>
+      <width>371</width>
+      <height>571</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>60</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>16777215</width>
+      <height>20</height>
+     </size>
+    </property>
+    <property name="text">
+     <string>原始图像</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="pretreatmentCheckBox">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>0</y>
+      <width>151</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>显示预处理后效果</string>
+    </property>
+   </widget>
    <zorder>chartPainter</zorder>
    <zorder>verticalLayoutWidget</zorder>
-   <zorder>verticalLayoutWidget_2</zorder>
    <zorder>gridLayoutWidget_2</zorder>
    <zorder>verticalLayoutWidget_3</zorder>
    <zorder>scrollArea</zorder>
+   <zorder>OriginalImage</zorder>
+   <zorder>label_3</zorder>
+   <zorder>pretreatmentCheckBox</zorder>
   </widget>
  </widget>
  <customwidgets>

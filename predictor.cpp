@@ -51,7 +51,7 @@ void Predictor::timerEvent(QTimerEvent*)
         problem=new ceres::Problem();
         QVector<Target> list(processor->historyTarget);
         int startIndex=list.size()-1-samples;
-//        qDebug()<<"startIndex:"<<startIndex;
+        //qDebug()<<"startIndex:"<<startIndex;
         Target currentTarget=list.last();
         // seve the start time
         startTimestamp=currentTarget.timestamp;
@@ -60,25 +60,108 @@ void Predictor::timerEvent(QTimerEvent*)
         {
             float angleDifference;
             //如果跳变帧包含在区间内，则用跳变后的角度折算至跳变前，计算角度差
-            qDebug()<<"last jump:"<<processor->indexOfLastJump;
-            if(i-tau < processor->indexOfLastJump)
-                angleDifference=list[i].lastArmorAngle-list[i-tau].armorAngle;
-            else
-                angleDifference=list[i].armorAngle-list[i-tau].armorAngle;
-            if(angleDifference>0.1)
+            //qDebug()<<"last jump:"<<processor->indexOfLastJump;
+            if(list[i-tau].hasTarget&list[i].hasTarget)
             {
-                count++;
-                double tmp=((double)(list[i].timestamp-currentTarget.timestamp))/1000000000;//纳秒换秒
+                //顺时针旋转
+                if(processor->rotateDirection)
+                {
+                    //如果前tao帧的角度比当前帧大
+                    if(i-tau < processor->indexOfLastJump)
+                    {
+                        if(list[i-tau].armorAngle>list[i].lastArmorAngle)
+                        {
+                            //角度差即为当前角度减去前tao帧的角度
+                            angleDifference=list[i-tau].armorAngle-list[i].lastArmorAngle;
+                        }
+                            //如果前tao帧的角度比当前帧小（旋转过程中经过了x轴正半轴）
+                        else
+                        {
+                            angleDifference=CV_2PI-list[i].lastArmorAngle+list[i-tau].armorAngle;
+                        }
+                    }
+                    else
+                    {
+                        if(list[i-tau].armorAngle>list[i].armorAngle)
+                        {
+                            //角度差即为当前角度减去前tao帧的角度
+                            angleDifference=list[i-tau].armorAngle-list[i].armorAngle;
+                        }
+                            //如果前tao帧的角度比当前帧小（旋转过程中经过了x轴正半轴）
+                        else
+                        {
+                            angleDifference=CV_2PI-list[i].armorAngle+list[i-tau].armorAngle;
+                        }
+                    }
+                }
+                //逆时针旋转
+                else
+                {
+                    if(i-tau < processor->indexOfLastJump)
+                    {
+                        //如果前tao帧的角度比当前帧小,则用当前角度减去前τ帧的角度
+                        if(list[i-tau].armorAngle<list[i].lastArmorAngle)
+                        {
+                            angleDifference=list[i].lastArmorAngle-list[i-tau].armorAngle;
+//                        qDebug()<<before.armorAngle<<" "<<target.armorAngle<<" "<<target.angleDifference;
+                        }
+                            //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）,则用前τ帧的角度减去当前角度
+                        else
+                        {
+                            //角度差即为当前角度减去前tao帧的角度
+                            angleDifference=CV_2PI+list[i].lastArmorAngle-list[i-tau].armorAngle;
+                        }
+                    }
+                    else
+                    {
+                        //如果前tao帧的角度比当前帧小,则用当前角度减去前τ帧的角度
+                        if(list[i-tau].armorAngle<list[i].armorAngle)
+                        {
+                            angleDifference=list[i].armorAngle-list[i-tau].armorAngle;
+                        }
+                            //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）,则用前τ帧的角度减去当前角度
+                        else
+                        {
+                            //角度差即为当前角度减去前tao帧的角度
+                            angleDifference=CV_2PI+list[i].armorAngle-list[i-tau].armorAngle;
+                        }
+                    }
+
+                }
+
+//                if(processor->rotateDirection)
+//                {
+//                    if(i-tau < processor->indexOfLastJump)
+//                        angleDifference=list[i-tau].armorAngle-list[i].lastArmorAngle;
+//                    else
+//                        angleDifference=list[i-tau].armorAngle-list[i].armorAngle;
+//                }
+//                else
+//                {
+//                    if(i-tau < processor->indexOfLastJump)
+//                        angleDifference=list[i].lastArmorAngle-list[i-tau].armorAngle;
+//                    else
+//                        angleDifference=list[i].armorAngle-list[i-tau].armorAngle;
+//                }
+                //qDebug()<<angleDifference;
+                //angleDifference = fmod(angleDifference+CV_2PI,CV_2PI);
+                //emit newPhi(list[i].timestamp,angleDifference);
+                //qDebug()<<"angleDifference:"<<angleDifference;
+                if(angleDifference>0.1&&angleDifference<1.5)
+                {
+                    count++;
+                    double tmp=((double)(list[i].timestamp-currentTarget.timestamp))/1000000000;//纳秒换秒
 //                qDebug()<<tmp<<","<<(double)list[i].angleDifference;
-                problem->AddResidualBlock (     // 向问题中添加误差项
-                        // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
-                        new ceres::AutoDiffCostFunction<CURVE_FITTING_COST, 1, 1> (
-                                //以开始拟合的一帧作为时间轴原点，其余帧与其计算相对时间
-                                new CURVE_FITTING_COST (tmp,(double)angleDifference,tao)
-                        ),
-                        nullptr,            // 核函数，这里不使用，为空
-                        _phi                 // 待估计参数
-                );
+                    problem->AddResidualBlock (     // 向问题中添加误差项
+                            // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
+                            new ceres::AutoDiffCostFunction<CURVE_FITTING_COST, 1, 1> (
+                                    //以开始拟合的一帧作为时间轴原点，其余帧与其计算相对时间
+                                    new CURVE_FITTING_COST (tmp,(double)angleDifference,tao)
+                            ),
+                            nullptr,            // 核函数，这里不使用，为空
+                            _phi                 // 待估计参数
+                    );
+                }
             }
         }
 //        cout<<endl;
@@ -98,7 +181,7 @@ void Predictor::timerEvent(QTimerEvent*)
 //            else
                 phi=_phi[0];
             last_phi=phi;   //更新last_phi
-//            qDebug()<<phi;
+            qDebug()<<phi;
             emit newPhi(startTimestamp, fmod(_phi[0]+CV_2PI,CV_2PI));
         }
         delete problem;
@@ -125,6 +208,7 @@ Point2f Predictor::predictPoint(float predictTime)
     float x=currentTarget.normalizedCenter.x;
     float y=currentTarget.normalizedCenter.y;
     //顺时针旋转
+    //qDebug()<<"direction:"<<processor->rotateDirection;
     if(!processor->rotateDirection)
         predictAngleDifference=-predictAngleDifference;
     tmp.x=x*cos(predictAngleDifference)-y*sin(predictAngleDifference);

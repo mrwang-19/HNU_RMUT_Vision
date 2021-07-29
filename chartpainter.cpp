@@ -30,8 +30,8 @@ ChartPainter::ChartPainter(QWidget *parent) : QCustomPlot(parent)
     graph(3)->setLineStyle(QCPGraph::lsNone);
     graph(3)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
     QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
-    timeTicker->setTimeFormat("%m:%s");
-    timeTicker->setTickCount(10);
+    timeTicker->setTimeFormat("%s");
+    timeTicker->setTickCount(4);
     xAxis->setTicker(timeTicker);
     axisRect()->setupFullAxesBox();
     yAxis->setRange(0, CV_2PI);

@@ -41,7 +41,10 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
+void MainWindow::start()
+{
+    on_OpenButton_clicked();
+}
 void MainWindow::on_OpenButton_clicked()
 {
     if(!cam.isOpened())
@@ -64,6 +67,8 @@ void MainWindow::on_OpenButton_clicked()
             ImageProcessor::blueDecay=ui->blueDecaySpinBox->value();
             ImageProcessor::binaryThreshold=ui->thresholdspinBox->value();
             ImageProcessor::dilateKernelSize=ui->dilateKernelSizeSpinBox->value();
+            ImageProcessor::minRadius=ui->minRadiusSpinBox->value();
+            ImageProcessor::maxRadius=ui->maxRadiusSpinBox->value();
             processor=new ImageProcessor(height,width,(uint16_t)frameRate);
             processor->moveToThread(&processorHandler);
             connect(&cam,static_cast<void (Camera::*)(char*,int,int,uint64_t)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(char *,int,int,uint64_t)>(&ImageProcessor::onNewImage));
@@ -81,6 +86,8 @@ void MainWindow::on_OpenButton_clicked()
             ImageProcessor::blueDecay=ui->blueDecaySpinBox->value();
             ImageProcessor::binaryThreshold=ui->thresholdspinBox->value();
             ImageProcessor::dilateKernelSize=ui->dilateKernelSizeSpinBox->value();
+            ImageProcessor::minRadius=ui->minRadiusSpinBox->value();
+            ImageProcessor::maxRadius=ui->maxRadiusSpinBox->value();
             processor=new ImageProcessor(height,width,(uint16_t)frameRate);
             processor->moveToThread(&processorHandler);
             connect(&cam,static_cast<void (Camera::*)(Mat)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(Mat)>(&ImageProcessor::onNewImage));
@@ -146,11 +153,12 @@ void MainWindow::timerEvent(QTimerEvent*)
     {
         //设置转向
         processor->rotateDirection=transceiver->recvFrame.rotateDricetion;
+        //processor->rotateDirection=true;
         if(processor->historyTarget.size()>0 && processor->historyTarget.isDetached())
         {
             Target tmp=processor->historyTarget.last();
 
-            Mat img;    //最新原始图像的拷贝，用于调试
+            Mat img,bin;    //最新原始图像的拷贝，用于调试
             if(processor->frameQueue.size()>0)
                 processor->frameQueue.last().copyTo(img);
 
@@ -214,19 +222,22 @@ void MainWindow::timerEvent(QTimerEvent*)
                     pid_yaw.pid_reset();
                     pid_pit.pid_reset();
                 }
-                //标出关键点
-                circle(img,tmp.center,10,Scalar(0,255,0),-1);
-                circle(img,tmp.center,ImageProcessor::rRadius,Scalar(255,0,255),5);
-                circle(img,tmp.armorCenter,10,Scalar(255,0,0),-1);
-                circle(img,tmp.armorCenter,ImageProcessor::minRadius,Scalar(255,255,0),5);
-                circle(img,tmp.armorCenter,ImageProcessor::maxRadius,Scalar(0,255,255),5);
-                cv::Point2f* vertices = new cv::Point2f[4];
-                tmp.armorRect.points(vertices);
-                for (size_t i = 0; i < 4; i++)
+                if(!ui->pretreatmentCheckBox->isChecked())
                 {
-                    line(img, vertices[i], vertices[(i + 1) % 4], cv::Scalar(0, 255, 0), 4, 8, 0);
+                    //标出关键点
+                    circle(img,tmp.center,10,Scalar(0,255,0),-1);
+                    circle(img,tmp.center,ImageProcessor::rRadius,Scalar(255,0,255),5);
+                    circle(img,tmp.armorCenter,10,Scalar(255,0,0),-1);
+                    circle(img,tmp.armorCenter,ImageProcessor::minRadius,Scalar(255,255,0),5);
+                    circle(img,tmp.armorCenter,ImageProcessor::maxRadius,Scalar(0,255,255),5);
+                    cv::Point2f* vertices = new cv::Point2f[4];
+                    tmp.armorRect.points(vertices);
+                    for (size_t i = 0; i < 4; i++)
+                    {
+                        line(img, vertices[i], vertices[(i + 1) % 4], cv::Scalar(0, 255, 0), 4, 8, 0);
+                    }
+                    circle(img,p,15,Scalar(255,255,0),-1);
                 }
-                circle(img,p,15,Scalar(255,255,0),-1);
                 ui->angleLable->setNum(tmp.armorAngle);
                 ui->centerLable->setText(QString::number(tmp.center.x,'f',4)+","+QString::number(tmp.center.y,'f',4));
                 ui->armorLable->setText(QString::number(tmp.armorCenter.x,'f',4)+","+QString::number(tmp.armorCenter.y,'f',4));
@@ -238,7 +249,14 @@ void MainWindow::timerEvent(QTimerEvent*)
                 transceiver->sendFrame.pitchAngleSet=0;
             }
             //更新ui
-            QImage ori=QImage((const uchar*)img.data,width,height,QImage::Format_RGB888);
+            QImage ori;
+            if(ui->pretreatmentCheckBox->isChecked())
+            {
+                bin=processor->pretreatment(img);
+                ori=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
+            }
+            else
+                ori=QImage((const uchar*)img.data,width,height,QImage::Format_RGB888);
             ui->OriginalImage->setPixmap(QPixmap::fromImage(ori));
             //刷新云台角度
             ui->pitchAngleLable->setText(tr("%1").arg(transceiver->recvFrame.pitchAngleGet));
