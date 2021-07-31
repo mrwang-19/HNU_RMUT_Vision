@@ -29,7 +29,6 @@ struct CURVE_FITTING_COST
         const T* const phi,       // 待拟合参数，有1维
         T* residual ) const     // 残差
     {
-//        residual[0] = T ( _y ) - ceres::exp ( abc[0]*T ( _x ) *T ( _x ) + abc[1]*T ( _x ) + abc[2] ); // y-exp(ax^2+bx+c)
         auto value = 1.305*_tau + 0.41666666667*(-ceres::cos(phi[0]+(1.884*_x)) + ceres::cos(phi[0]+1.884*(-_tau+_x)));
 //        auto value = 1.305*_tau+0.4166666667*(-2)* sin(-1.884*_tau/2)*ceres::sin(phi[0]+1.884*_x+(1.884*_tau/2));
         residual[0] = T(_y) - value;
@@ -53,8 +52,8 @@ void Predictor::timerEvent(QTimerEvent*)
         int startIndex=list.size()-1-samples;
         //qDebug()<<"startIndex:"<<startIndex;
         Target currentTarget=list.last();
-        // seve the start time
-        startTimestamp=currentTarget.timestamp;
+        //可能的开始时间，因为拟合结果最后不一定被采纳
+        uint64_t possibleStartTimestamp=currentTarget.timestamp;
         int count=0;
         for(int i=startIndex;i<startIndex+samples;i++)
         {
@@ -66,9 +65,10 @@ void Predictor::timerEvent(QTimerEvent*)
                 //顺时针旋转
                 if(processor->rotateDirection)
                 {
-                    //如果前tao帧的角度比当前帧大
-                    if(i-tau < processor->indexOfLastJump)
+                    //如果tau帧内包含着跳符，则使用折算角度
+                    if(i-tau < processor->indexOfLastJump && i > processor->indexOfLastJump)
                     {
+                        //如果前tao帧的角度比当前帧大
                         if(list[i-tau].armorAngle>list[i].lastArmorAngle)
                         {
                             //角度差即为当前角度减去前tao帧的角度
@@ -97,13 +97,13 @@ void Predictor::timerEvent(QTimerEvent*)
                 //逆时针旋转
                 else
                 {
-                    if(i-tau < processor->indexOfLastJump)
+                    //如果tau帧内包含着跳符，则使用折算角度
+                    if(i-tau < processor->indexOfLastJump && i > processor->indexOfLastJump)
                     {
                         //如果前tao帧的角度比当前帧小,则用当前角度减去前τ帧的角度
                         if(list[i-tau].armorAngle<list[i].lastArmorAngle)
                         {
                             angleDifference=list[i].lastArmorAngle-list[i-tau].armorAngle;
-//                        qDebug()<<before.armorAngle<<" "<<target.armorAngle<<" "<<target.angleDifference;
                         }
                             //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）,则用前τ帧的角度减去当前角度
                         else
@@ -145,13 +145,14 @@ void Predictor::timerEvent(QTimerEvent*)
 //                }
                 //qDebug()<<angleDifference;
                 //angleDifference = fmod(angleDifference+CV_2PI,CV_2PI);
-                //emit newPhi(list[i].timestamp,angleDifference);
+                emit newPhi(list[i].timestamp,angleDifference);
                 //qDebug()<<"angleDifference:"<<angleDifference;
                 if(angleDifference>0.1&&angleDifference<1.5)
                 {
                     count++;
-                    double tmp=((double)(list[i].timestamp-currentTarget.timestamp))/1000000000;//纳秒换秒
-//                qDebug()<<tmp<<","<<(double)list[i].angleDifference;
+                    //为了防止精度丢失，要先用后面的时间戳（大）减去前面的时间戳（小）然后才能转换成负数
+                    double tmp=((double)(possibleStartTimestamp-list[i].timestamp))/-1000000000.0;//纳秒换秒
+                    //qDebug()<<tmp<<","<<angleDifference;
                     problem->AddResidualBlock (     // 向问题中添加误差项
                             // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
                             new ceres::AutoDiffCostFunction<CURVE_FITTING_COST, 1, 1> (
@@ -164,8 +165,6 @@ void Predictor::timerEvent(QTimerEvent*)
                 }
             }
         }
-//        cout<<endl;
-//            qDebug()<<"count:"<<count;
         //有效样本足够多才能进行拟合
         if(count>samples-10)
         {
@@ -181,8 +180,12 @@ void Predictor::timerEvent(QTimerEvent*)
 //            else
                 phi=_phi[0];
             last_phi=phi;   //更新last_phi
-            qDebug()<<phi;
+            startTimestamp=possibleStartTimestamp;//更新拟合函数原点的实际时间
             emit newPhi(startTimestamp, fmod(_phi[0]+CV_2PI,CV_2PI));
+        }
+        else
+        {
+            //qDebug()<<"未能信任拟合结果，有效样本数："<<count;
         }
         delete problem;
     }
@@ -197,13 +200,13 @@ Point2f Predictor::predictPoint(float predictTime)
     static float lastX,lastY;
     Point2f tmp;
     float predictAngleDifference=0.0;
-//    Target currentTarget;
+    Target currentTarget;
     currentTarget=processor->historyTarget.last();
-    float timePassed=((float)(currentTarget.timestamp-startTimestamp))/1000.0;
-    predictAngleDifference= pos_fun(predictTime,phi)-pos_fun(0,phi);
-//    qDebug()<<phi<<","<<timePassed+predictTime<<","<<predictAngleDifference;
-//    auto angle= fmod(currentTarget.armorAngle+predictAngleDifference+CV_2PI,CV_2PI);
-//    emit newPhi(currentTarget.timestamp+(int)(predictTime*1000),angle);
+    float timePassed=((float)(currentTarget.timestamp-startTimestamp))/1000000000.0;
+    predictAngleDifference = pos_fun(predictTime+timePassed,phi)-pos_fun(timePassed,phi);
+//    qDebug()<<phi<<timePassed<<predictAngleDifference;
+    auto angle= fmod(currentTarget.armorAngle-predictAngleDifference+CV_2PI,CV_2PI);
+    emit newSpeed(currentTarget.timestamp+(int)(predictTime*1000000000),angle);
 //    float predictAngleDifference=0.8333333333*sin(0.942*predictTime)*sin(1.884*(timePassed)+0.942/predictTime+phi)+1.305*predictTime;
     float x=currentTarget.normalizedCenter.x;
     float y=currentTarget.normalizedCenter.y;
@@ -223,7 +226,10 @@ Point2f Predictor::predictPoint(float predictTime)
 }
 float Predictor::getSpeed(float predictTime)
 {
-    float speed=0.785*sin(1.884*predictTime+phi)+1.305;
-    emit newSpeed(currentTarget.timestamp,speed);
+    Target currentTarget;
+    currentTarget=processor->historyTarget.last();
+    float timePassed=((float)(currentTarget.timestamp-startTimestamp))/1000000000.0;
+    float speed=0.785*sin(1.884*(predictTime+timePassed)+phi)+1.305;
+    //emit newSpeed(currentTarget.timestamp,speed);
     return speed;
 }

@@ -67,6 +67,7 @@ public:
     int64_t indexOfLastJump=-1;                    //targetHistory中上次跳变分界帧的索引
     QVector<Mat> frameQueue;                //帧队列
     QMutex frameLock;                       //帧队列锁
+    QMutex recoderLock;                     //VideoWriter锁
     QVector<Target> historyTarget;          //历史目标队列
     QMutex historyLock;                     //历史目标队列锁
     QThreadPool processors;                 //消费者线程池
@@ -87,6 +88,7 @@ private:
 
 signals:
     void newTarget(Target target);
+    void energyJumped();
 };
 
 

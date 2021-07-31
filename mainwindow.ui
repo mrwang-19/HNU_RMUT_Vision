@@ -52,7 +52,7 @@
      <item>
       <widget class="QPushButton" name="RecordButton">
        <property name="text">
-        <string>录制</string>
+        <string>开始录制</string>
        </property>
       </widget>
      </item>
@@ -354,7 +354,7 @@
           <number>255</number>
          </property>
          <property name="value">
-          <number>100</number>
+          <number>80</number>
          </property>
         </widget>
        </item>
@@ -388,7 +388,7 @@
        <item row="4" column="1">
         <widget class="QLineEdit" name="videoPathEdit">
          <property name="text">
-          <string>/media/rm/emmm/SZU_R_100fps.mp4</string>
+          <string>/media/rm/emmm/官方_100fps.mp4</string>
          </property>
         </widget>
        </item>

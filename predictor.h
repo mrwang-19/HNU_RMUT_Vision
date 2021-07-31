@@ -28,8 +28,7 @@ public:
     double phi;                 //拟合得到的相位
     double last_phi;            //上一次拟合得到的相位
     int timerID;                //定时器ID
-    uint64 startTimestamp;      //起始帧时间辍
-    Target currentTarget;
+    uint64 startTimestamp;      //拟合函数原点的实际时间
     Point2f predictPoint(float predictTime);   //计算预测角度差；
     float getSpeed(float predictTime);
 private:

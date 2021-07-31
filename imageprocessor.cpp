@@ -26,6 +26,9 @@ ImageProcessor::ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate
 }
 ImageProcessor::~ImageProcessor()
 {
+    //如果还在录像则先停止录像
+    if(recordingFlag)
+        stopRecording();
     processors.waitForDone();
 }
 /**
@@ -347,13 +350,13 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
 
             float delta=target.armorAngle-before.armorAngle;
             float Delta= fabs(delta);
-            if(historyTarget.size()>100&&Delta>0.17452 && Delta < 6.0)
+            if(historyTarget.size()>100&&Delta>0.9 && Delta < 6.0)
             {
                 lastJumpAngle=getJumpAngle(delta);
                 qDebug()<<delta<<lastJumpAngle;
                 target.jumpFlag=true;
                 indexOfLastJump=HISTORY_LENGTH-1;
-
+                emit energyJumped();
                 Mat debug=original.clone();
                 circle(debug,target.center,15,Scalar(0,0,255),-1);
                 circle(debug,target.armorCenter,15,Scalar(0,255,255),-1);
@@ -415,7 +418,11 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width,uint64_t tim
     for(int i=0;i<width*height*3;i++)
         frame.data[width*height*3-i-1]=img_data[i];
     if(recordingFlag)
+    {
+        recoderLock.lock();
         (*recorder)<<frame;
+        recoderLock.unlock();
+    }
     frameLock.lock();
     frameQueue.append(frame);
     frameLock.unlock();
@@ -435,6 +442,12 @@ void ImageProcessor::onNewImage(Mat frame)
 //    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
 //    qDebug()<<QThread::currentThread()<<timestamp;
     uint64_t mills_timestamp=dateTime.toMSecsSinceEpoch();
+    if(recordingFlag)
+    {
+        recoderLock.lock();
+        (*recorder)<<frame;
+        recoderLock.unlock();
+    }
     cvtColor(frame,frame,COLOR_BGR2RGB);
     frameLock.lock();
     frameQueue.append(frame);

@@ -72,6 +72,7 @@ void MainWindow::on_OpenButton_clicked()
             processor=new ImageProcessor(height,width,(uint16_t)frameRate);
             processor->moveToThread(&processorHandler);
             connect(&cam,static_cast<void (Camera::*)(char*,int,int,uint64_t)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(char *,int,int,uint64_t)>(&ImageProcessor::onNewImage));
+            connect(processor,&ImageProcessor::energyJumped,this,&MainWindow::onEnergyJumped);
             //开采
             cam.startCapture();
         }
@@ -91,6 +92,7 @@ void MainWindow::on_OpenButton_clicked()
             processor=new ImageProcessor(height,width,(uint16_t)frameRate);
             processor->moveToThread(&processorHandler);
             connect(&cam,static_cast<void (Camera::*)(Mat)>(&Camera::newImage),processor,static_cast<void (ImageProcessor::*)(Mat)>(&ImageProcessor::onNewImage));
+            connect(processor,&ImageProcessor::energyJumped,this,&MainWindow::onEnergyJumped);
             //开采
             cam.startCapture();
         }
@@ -135,6 +137,7 @@ void MainWindow::on_OpenButton_clicked()
         transceiverHandler.quit();
         transceiver=nullptr;
         //销毁处理线程
+        ui->RecordButton->setText("开始录像");
         processorHandler.quit();
         processor=nullptr;
         //改变按钮文本
@@ -153,7 +156,7 @@ void MainWindow::timerEvent(QTimerEvent*)
     {
         //设置转向
         processor->rotateDirection=transceiver->recvFrame.rotateDricetion;
-        //processor->rotateDirection=true;
+//        processor->rotateDirection=true;
         if(processor->historyTarget.size()>0 && processor->historyTarget.isDetached())
         {
             Target tmp=processor->historyTarget.last();
@@ -276,17 +279,20 @@ void MainWindow::on_RecordButton_clicked()
     {
         if(processor->recordingFlag)
         {
-            ui->RecordButton->setText("停止录制");
+            ui->RecordButton->setText("开始录制");
             emit stopRecording();
         }
         else
         {
-            ui->RecordButton->setText("开始录制");
+            ui->RecordButton->setText("停止录制");
             emit startRecording(ui->savePathEdit->text());
         }
     }
 }
-
+void MainWindow::onEnergyJumped()
+{
+    shootTimer.restart();
+}
 /**
  * @brief MainWindow::cam_init 初始化相机参数，在开采前调用（但本函数不开始采集）
  */

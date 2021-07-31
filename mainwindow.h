@@ -34,9 +34,11 @@ public:
     void start();
     ~MainWindow();
 
+public slots:
+    //若能量机关跳符，则重置发射定时
+    void onEnergyJumped();
 private slots:
     void on_OpenButton_clicked();
-
     void on_RecordButton_clicked();
 
     void on_blueDecaySpinBox_valueChanged(double arg1);
