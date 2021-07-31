@@ -299,6 +299,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
         //寻找中心R
         for (Point2f p:possibleCenter)
         {
+            //计算待选中心和装甲板中心的角度
             float x1=target.armorCenter.x-p.x;
             float y1=target.armorCenter.y-p.y;
             float x2,x3,x4,y2,y3,y4;
@@ -307,6 +308,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
             float dd1= distance(vectors[0],vectors[1]);
             float dd2= distance(vectors[1],vectors[2]);
             float r;
+            //筛选出和锤子柄同向的装甲板短边
             if(dd1<dd2)
             {
                 x2=target.armorCenter.x-vectors[0].x;
@@ -332,8 +334,8 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
             //qDebug()<<angle;
             //qDebug()<<"angle:"<<angle<<fabs(target.armorRect.angle);
             if(index>10&&before.hasTarget)
-             d2 = distance(p,before.center);
-            //qDebug()<<"中心距离:"<<d;
+                d2 = distance(p,before.center);
+            //筛选出中心R
             if(d1>minRadius && d1 < maxRadius && (angle<10||angle>170) )
             {
                 target.center=p;
@@ -350,18 +352,18 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
 
             float delta=target.armorAngle-before.armorAngle;
             float Delta= fabs(delta);
+            //跳符判断
             if(historyTarget.size()>100&&Delta>0.9 && Delta < 6.0)
             {
                 lastJumpAngle=getJumpAngle(delta);
-                qDebug()<<delta<<lastJumpAngle;
+                qDebug()<<frame_count<<delta<<lastJumpAngle;
                 target.jumpFlag=true;
-                indexOfLastJump=HISTORY_LENGTH-1;
+                indexOfLastJump=historyTarget.size();//本帧角标
                 emit energyJumped();
                 Mat debug=original.clone();
                 circle(debug,target.center,15,Scalar(0,0,255),-1);
                 circle(debug,target.armorCenter,15,Scalar(0,255,255),-1);
                 drawContours(debug,contours,-1,Scalar(0,255,0),5);
-//                  drawContours(debug,contours,min,Scalar(255,0,0),5);
                 imwrite("/home/rm/图片/JUMP_"+to_string(target.timestamp)+".bmp",debug);
             }
             if(rotateDirection)

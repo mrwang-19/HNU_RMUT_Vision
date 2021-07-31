@@ -66,7 +66,7 @@ void Predictor::timerEvent(QTimerEvent*)
                 if(processor->rotateDirection)
                 {
                     //如果tau帧内包含着跳符，则使用折算角度
-                    if(i-tau < processor->indexOfLastJump && i > processor->indexOfLastJump)
+                    if(i-tau < processor->indexOfLastJump && processor->indexOfLastJump <= i)
                     {
                         //如果前tao帧的角度比当前帧大
                         if(list[i-tau].armorAngle>list[i].lastArmorAngle)
@@ -98,7 +98,7 @@ void Predictor::timerEvent(QTimerEvent*)
                 else
                 {
                     //如果tau帧内包含着跳符，则使用折算角度
-                    if(i-tau < processor->indexOfLastJump && i > processor->indexOfLastJump)
+                    if(i-tau < processor->indexOfLastJump && processor->indexOfLastJump <= i)
                     {
                         //如果前tao帧的角度比当前帧小,则用当前角度减去前τ帧的角度
                         if(list[i-tau].armorAngle<list[i].lastArmorAngle)
@@ -163,6 +163,10 @@ void Predictor::timerEvent(QTimerEvent*)
                             _phi                 // 待估计参数
                     );
                 }
+//                else
+//                {
+//                    qDebug()<<list[i].index<<"角度："<<list[i-tau].armorAngle<<list[i].armorAngle<<list[i].lastArmorAngle;
+//                }
             }
         }
         //有效样本足够多才能进行拟合
