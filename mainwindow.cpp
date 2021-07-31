@@ -198,6 +198,7 @@ void MainWindow::timerEvent(QTimerEvent*)
                 //如果处于自瞄模式则跟随预测点
                 if(transceiver->recvFrame.gimbal_mode==4)
                 {
+                    //瞄准预测点
                     if(ui->checkBoxFollowPredict->isChecked())
                     {
                         angleSolver.getAngle(p,tmp_yaw,tmp_pit);
@@ -205,7 +206,7 @@ void MainWindow::timerEvent(QTimerEvent*)
                         transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp_yaw,ui->hBaisSpinBox->value());
                         transceiver->sendFrame.pitchAngleSet=-pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
                     }
-                        //跟随当前点
+                    //跟随当前装甲板
                     else if(ui->checkBoxFollowCurrent->isChecked())
                     {
                         angleSolver.getAngle(tmp.armorCenter,tmp_yaw,tmp_pit);
@@ -213,10 +214,13 @@ void MainWindow::timerEvent(QTimerEvent*)
                         transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp_yaw,ui->hBaisSpinBox->value());
                         transceiver->sendFrame.pitchAngleSet=-pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
                     }
+                    //瞄准中心R
                     else
                     {
-                        transceiver->sendFrame.yawAngleSet=0;
-                        transceiver->sendFrame.pitchAngleSet=0;
+                        angleSolver.getAngle(tmp.center,tmp_yaw,tmp_pit);
+                        //PID闭环并加入偏置补偿
+                        transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp_yaw,ui->hBaisSpinBox->value());
+                        transceiver->sendFrame.pitchAngleSet=-pid_pit.pid_calc(tmp_pit,ui->vBaisSpinBox->value());
                     }
                 }
                 //非自瞄模式
@@ -225,6 +229,7 @@ void MainWindow::timerEvent(QTimerEvent*)
                     pid_yaw.pid_reset();
                     pid_pit.pid_reset();
                 }
+
                 if(!ui->pretreatmentCheckBox->isChecked())
                 {
                     //标出关键点
