@@ -366,11 +366,8 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                 drawContours(debug,contours,-1,Scalar(0,255,0),5);
                 imwrite("/home/rm/图片/JUMP_"+to_string(target.timestamp)+".bmp",debug);
             }
-            if(rotateDirection)
-                target.lastArmorAngle=target.armorAngle-lastJumpAngle+CV_2PI;
-            else
-                target.lastArmorAngle=target.armorAngle+lastJumpAngle;
-            target.lastArmorAngle= fmod(target.lastArmorAngle,CV_2PI);
+            //target.lastArmorAngle=target.armorAngle-lastJumpAngle+CV_2PI;
+            target.lastArmorAngle= fmod(target.armorAngle-lastJumpAngle+CV_2PI,CV_2PI);
         }
         else
         {
