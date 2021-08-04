@@ -23,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent)
     pid_yaw.kp=ui->yawKpSpinBox->value();
     pid_yaw.ki=ui->yawKiSpinBox->value();
     pid_yaw.kd=ui->yawKdSpinBox->value();
+    //TODO:加载相机参数
     angleSolver.setCameraParam("/home/rm/HNU_RMUT_Version/camera_params.xml", 1);
     shootTimer=QTime::currentTime();
     pointer_=this;
@@ -41,10 +42,12 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+/// 实际使用时调用此函数来实现自启动
 void MainWindow::start()
 {
     on_OpenButton_clicked();
 }
+
 void MainWindow::on_OpenButton_clicked()
 {
     if(!cam.isOpened())
@@ -111,17 +114,18 @@ void MainWindow::on_OpenButton_clicked()
         connect(processor,&ImageProcessor::newTarget,ui->chartPainter,&ChartPainter::onTarget);
         chartPainterHandler.start();
         //创建预测线程
-        predictor = new Predictor(processor,(frameRate*1.5));
+        predictor = new Predictor(processor,(frameRate*1.5));   //拟合1.5s
         connect(&predictorHandler,&QThread::finished,predictor,&Predictor::deleteLater);
         connect(predictor,&Predictor::newPhi,ui->chartPainter,&ChartPainter::onPhi);
         connect(predictor,&Predictor::newSpeed,ui->chartPainter,&ChartPainter::onSpeed);
+        connect(predictor,&Predictor::newAngleDifference,ui->chartPainter,&ChartPainter::onAngleDifference);
         predictor->moveToThread(&predictorHandler);
         predictorHandler.start();
         //重置PID
         pid_yaw.pid_reset();
         pid_pit.pid_reset();
         //启动定时器
-        timerID=startTimer(33ms);
+        timerID=startTimer(33ms);   //主线程30Hz
         ui->OpenButton->setText("关闭");
     }
     else
@@ -156,7 +160,7 @@ void MainWindow::timerEvent(QTimerEvent*)
     {
         //设置转向
         processor->rotateDirection=transceiver->recvFrame.rotateDricetion;
-//        processor->rotateDirection=true;
+        processor->rotateDirection= false;
         if(processor->historyTarget.size()>0 && processor->historyTarget.isDetached())
         {
             Target tmp=processor->historyTarget.last();
@@ -171,18 +175,13 @@ void MainWindow::timerEvent(QTimerEvent*)
                 //预测
                 Point2f p;
                 float timePassed=shootTimer.elapsed()/1000.0f;
-//                qDebug()<<timePassed;
                 float predictTime=ui->predictTimeSpinBox->value();
 //                auto lead=0.3*predictor->getSpeed(predictTime-timePassed);
                 float lead=0.1*predictor->getSpeed(0.1)+ui->leadTimeSpinBox->value();
-//                qDebug()<<timePassed<<","<<lead<<","<<flag;
                 if((timePassed>(predictTime-lead))&&flag)
                 {
                     transceiver->sendFrame.shootCommand=1;
                     flag=false;
-                    //qDebug()<<lead;
-                    //打印时间戳
-//                    qDebug()<<QThread::currentThread()<<shootTimer.currentTime();
                 }
                 if(timePassed>predictTime)
                 {
@@ -388,7 +387,6 @@ void MainWindow::on_maxRadiusSpinBox_valueChanged(int arg1)
 {
     ImageProcessor::maxRadius=arg1;
 }
-
 
 void MainWindow::on_minRadiusSpinBox_valueChanged(int arg1)
 {

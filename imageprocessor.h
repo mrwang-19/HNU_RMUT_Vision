@@ -58,7 +58,7 @@ public:
     static uint8_t binaryThreshold;         //二值化阈值
     static uint8_t dilateKernelSize;        //膨胀核大小
     static uint8_t maxRadius,minRadius;     //最大最小半径
-    static uint8_t rRadius;       //中心R logo半径
+    static uint8_t rRadius;                 //中心R logo半径
 
     bool recordingFlag=false;               //录制标记
     float t;                                //规则时间
@@ -78,13 +78,14 @@ public slots:
     void onNewImage(char* img_data,int height,int width,uint64_t timestamp);
     void onNewImage(Mat Frame);
     Mat pretreatment(Mat frame);
+
 private:
     //函数
     void detectTarget(uint64_t timestamp);
 
     //变量
-    std::ofstream *csv_save=nullptr;    //保存的csv文件
-    cv::VideoWriter *recorder =nullptr; //录制视频的句柄
+    std::ofstream *csv_save=nullptr;        //保存的csv文件
+    cv::VideoWriter *recorder =nullptr;     //录制视频的句柄
 
 signals:
     void newTarget(Target target);

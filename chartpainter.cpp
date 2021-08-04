@@ -13,22 +13,26 @@ ChartPainter::ChartPainter(QWidget *parent) : QCustomPlot(parent)
     yAxis->setTickLabelFont(font);
     legend->setFont(font);
     */
-    addGraph(); // blue line
-    graph(0)->setPen(QPen(QColor(40, 110, 255)));
+    addGraph(); // 深蓝线，当前目标角度
+    graph(0)->setPen(QPen(QColor(0, 0, 0xff)));
     graph(0)->setLineStyle(QCPGraph::lsNone);
     graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
-    addGraph(); // red line
-    graph(1)->setPen(QPen(QColor(255, 110, 40)));
+    addGraph(); // 浅蓝线，跳变后折算的角度
+    graph(1)->setPen(QPen(QColor(0, 0xcc, 0xff)));
     graph(1)->setLineStyle(QCPGraph::lsNone);
     graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
-    addGraph(); // black line
-    graph(2)->setPen(QPen(QColor(0, 0, 0)));
+    addGraph(); // 橙线，预测的角速度
+    graph(2)->setPen(QPen(QColor(255, 110, 40)));
     graph(2)->setLineStyle(QCPGraph::lsNone);
     graph(2)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
-    addGraph(); // green line
-    graph(3)->setPen(QPen(QColor(0, 255, 0)));
+    addGraph(); // 黑线，角度差
+    graph(3)->setPen(QPen(QColor(0, 0, 0)));
     graph(3)->setLineStyle(QCPGraph::lsNone);
     graph(3)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
+    addGraph(); // 绿线，拟合得到的相位
+    graph(4)->setPen(QPen(QColor(0, 255, 0)));
+    graph(4)->setLineStyle(QCPGraph::lsNone);
+    graph(4)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 2));
     QSharedPointer<QCPAxisTickerTime> timeTicker(new QCPAxisTickerTime);
     timeTicker->setTimeFormat("%s");
     timeTicker->setTickCount(4);
@@ -40,25 +44,22 @@ ChartPainter::ChartPainter(QWidget *parent) : QCustomPlot(parent)
     connect(xAxis, SIGNAL(rangeChanged(QCPRange)), xAxis2, SLOT(setRange(QCPRange)));
     connect(yAxis, SIGNAL(rangeChanged(QCPRange)), yAxis2, SLOT(setRange(QCPRange)));
 }
-
+/// onTarget 绘制当前角度和折算角度的槽函数
+/// \param target 当前目标对象
 void ChartPainter::onTarget(Target target)
 {
     if(target.hasTarget)
     {
-        // calculate two new data points:
+        // 目标对象内本就包含时间戳
         double key = (target.timestamp-timeStart)/1000000000.0; // time elapsed since start of demo, in seconds
         static double lastPointKey = 0;
         if (key-lastPointKey > 0.002) // at most add point every 2 ms
         {
-          // add data to lines:
+          // 画角度
           graph(0)->addData(key, target.armorAngle);
-#ifdef SIMPLE_ENERGY
-            graph(1)->addData(key, target.angleDifference);
-#endif
-#ifdef REAL_ENERGY
-            graph(1)->addData(key, target.lastArmorAngle);
-#endif
-          //qDebug()<<target.timestamp<<target.angleDifference;
+          // 画折算角度
+          graph(1)->addData(key, target.lastArmorAngle);
+
           // rescale value (vertical) axis to fit the current data:
           graph(0)->rescaleValueAxis();
           graph(1)->rescaleValueAxis(true);
@@ -68,13 +69,30 @@ void ChartPainter::onTarget(Target target)
         xAxis->setRange(key, 8, Qt::AlignRight);
     }
 }
-void ChartPainter::onPhi(uint64 timestamp,float phi)
-{
-    double key = (timestamp-timeStart)/1000000000.0;
-    graph(2)->addData(key , phi);
-}
+
+/// onSpeed
+/// \param timestamp
+/// \param speed
 void ChartPainter::onSpeed(uint64 timestamp,float speed)
 {
     double key = (timestamp-timeStart)/1000000000.0;
-    graph(3)->addData(key , speed);
+    graph(2)->addData(key , speed);
+}
+
+/// onAngleDifference 绘制角度差的槽函数
+/// \param timestamp 时间戳
+/// \param angleDifference 角度差
+void ChartPainter::onAngleDifference(uint64_t timestamp, float angleDifference)
+{
+    double key = (timestamp-timeStart)/1000000000.0;
+    graph(3)->addData(key , angleDifference);
+}
+
+/// onPhi 绘制拟合相位的槽函数
+/// \param timestamp 时间戳
+/// \param phi 相位值
+void ChartPainter::onPhi(uint64 timestamp,float phi)
+{
+    double key = (timestamp-timeStart)/1000000000.0;
+    graph(4)->addData(key , phi);
 }

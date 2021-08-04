@@ -9,6 +9,7 @@
 using namespace cv;
 using namespace std;
 
+//初始化识别参数（实际参数会在程序启动时从ui获取）
 double ImageProcessor::blueDecay=0.25;
 uint8_t ImageProcessor::dilateKernelSize=5;
 uint8_t ImageProcessor::binaryThreshold=100;
@@ -24,6 +25,7 @@ ImageProcessor::ImageProcessor(uint16_t height,uint16_t width,uint16_t frameRate
 {
     qRegisterMetaType<Target>("Target");
 }
+
 ImageProcessor::~ImageProcessor()
 {
     //如果还在录像则先停止录像
@@ -54,10 +56,12 @@ Mat ImageProcessor::pretreatment(Mat frame)
     morphologyEx(mid,bin,MORPH_CLOSE,kernel);
     return bin;
 }
+
 float distance(Point2f a,Point2f b)
 {
     return sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));
 }
+
 /**
  * @brief myArctan 求一点距x轴的夹角
  * @param p 点
@@ -67,16 +71,15 @@ float myArctan(Point2f p)
 {
     float angle = atan2(p.y,p.x);
     return fmod(CV_2PI-angle,CV_2PI);
-//    if (p.y < 0.0)
-//    {
-//        angle = (CV_2PI + angle);
-//    }
-//    return CV_2PI-angle;
 }
+
 // 2pi/5=1.256637;
 // 4p1/5=2.513274;
 // 6pi/5=3.769912;
 // 8pi/5=5.026548;
+/// getJumpAngle 根据跳符前后帧间角度差获取理想的跳转角度
+/// \param deltaAngle 跳符前后帧间角度差
+/// \return 最接近的理想跳转角度
 float getJumpAngle(float deltaAngle)
 {
     int minIndex=1;
@@ -122,127 +125,18 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
     }
     frameLock.unlock();
     binaryImage=pretreatment(original);
-//    imshow("debug",binaryImage);
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
-    //打印时间戳
-//    QDateTime dateTime = QDateTime::fromMSecsSinceEpoch(timestamp);
-//    qDebug()<<"processor:"<<frame_count<<" "<<dateTime.toString("hh:mm:ss.zzz");
-#ifdef SIMPLE_ENERGY //自制简化大符
-    findContours(binaryImage,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
-    float max_area=2.0,max_rito=2.0;
-    if(contours.size()<2)
-    {
-        target.center=Point2f(width/2,height/2);
-//        qDebug()<<frame_count<<"has no target";
-    }
-    else
-    {
-        for(int i=0;i<(int)contours.size();i++)
-        {
-            auto rect=minAreaRect(contours[i]);
-            auto area = contourArea(contours[i]);
-            if(area>80)
-            {
-                auto tmp = abs(1-area/rect.size.area());
-                if(tmp<max_area&&area>1000)
-                {
-                    max_area=tmp;
-                    target.armorRect=rect;
-                }
-                Point2f center;
-                float r;
-                minEnclosingCircle(contours[i],center,r);
-                tmp= abs(1-area/(CV_2PI*r*r));
-                if(tmp<max_rito&&area<1000)
-                {
-                    max_rito=tmp;
-                    target.center=center;
-                }
-                target.hastarget=true;
-            }
-        }
-        //计算目标装甲板中心的像素坐标
-        target.armorCenter=target.armorRect.center;
-        //计算目标装甲板中心相对于能量机关中心的像素坐标
-        target.normalizedCenter=Point2f(target.armorCenter.x-target.center.x,target.armorCenter.y-target.center.y);
-        target.radius= sqrt(target.normalizedCenter.x*target.normalizedCenter.x+target.normalizedCenter.y*target.normalizedCenter.y);
-        //计算目标装甲板中心相对于能量机关中心x轴的夹角
-        target.armorAngle=myArctan(target.normalizedCenter);
-        int index=historyTarget.size()-1;
-        Target before;
-        if(index>=0)
-            before=historyTarget[index];
-        if(target.center.x-before.center.x>100)
-        {
-            Mat debug=original.clone();
-            circle(debug,target.center,15,Scalar(0,255,0),-1);
-            drawContours(debug,contours,-1,Scalar(255,0,0),5);
-//            drawContours(debug,contours,min,Scalar(255,0,0),5);
-            imwrite(to_string(rand())+".bmp",debug);
-        }
-        if(index>=0)
-        {
-            before=historyTarget[index];
-            if(fabs(before.armorAngle-target.armorAngle)<3.0)
-            {
-                target.armorAngle=0.5*target.armorAngle+0.5*before.armorAngle;
-            }
-        }
-        //计算角度差
-        index=historyTarget.size()-tao-1;
-        if(index>=0)
-        {
-            before=historyTarget[index];
-            if(before.hasTarget)
-            {
-                //顺时针旋转
-                if(rotateDirection)
-                {
-                    //如果前tao帧的角度比当前帧大
-                    if(before.armorAngle>target.armorAngle)
-                    {
-                        //角度差即为当前角度减去前tao帧的角度
-                        target.angleDifference=before.armorAngle-target.armorAngle;
-                    }
-                    //如果前tao帧的角度比当前帧小（旋转过程中经过了x轴正半轴）
-                    else
-                    {
-                        target.angleDifference=CV_2PI-target.armorAngle+before.armorAngle;
-                    }
-                }
-                //逆时针旋转
-                else
-                {
-                    //如果前tao帧的角度比当前帧小,则用当前角度减去前τ帧的角度
-                    if(before.armorAngle<target.armorAngle)
-                    {
-                        target.angleDifference=target.armorAngle-before.armorAngle;
-//                        qDebug()<<before.armorAngle<<" "<<target.armorAngle<<" "<<target.angleDifference;
-                    }
-                    //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）,则用前τ帧的角度减去当前角度
-                    else
-                    {
-                        //角度差即为当前角度减去前tao帧的角度
-                        target.angleDifference=CV_2PI+target.armorAngle-before.armorAngle;
-                    }
-                }
-            }
-        }
-    }
-#endif
 
-#ifdef REAL_ENERGY //真正大符
     findContours(binaryImage,contours,hierarchy,RETR_TREE,CHAIN_APPROX_NONE);
     if(contours.size()>2)
     {
-        vector<Point> possibleTarget,possibleCenter;
+        vector<Point> possibleCenter;
         for(uint i=0;i<contours.size();i++)
         {
             int sub = hierarchy[i][2];
             if(sub!=-1)//有子轮廓
             {
-//                cout<<contours[sub].size()<<endl;
                 if(hierarchy[sub][0]==-1)//没有兄弟轮廓
                 {
                     auto area = contourArea(contours[sub]);//轮廓面积
@@ -253,6 +147,7 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                     if(aspectRatio>1)
                         aspectRatio=1/aspectRatio;
                     //qDebug()<<"面积:"<<area<<",长宽比:"<<aspectRatio<<",面积比:"<<areaRatio<<endl;
+                    //TODO:确定实际装甲板面积、长宽比、面积占比
                     if(area>400 && aspectRatio<0.76 && areaRatio>0.75)
                     {
                         target.armorRect=rect;
@@ -271,13 +166,18 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                 Point2f center;
                 float radius;
                 minEnclosingCircle(contours[i],center,radius);
-                //qDebug()<<"中心R半径:"<<radius<<center.x<<center.y<<endl;
                 if(radius<rRadius && radius>8)
                     possibleCenter.push_back(center);
             }
         }
+        //如果没有检测到锤子
         if(!target.hasTarget)
+        {
+            Mat debug=original.clone();
+            drawContours(debug,contours,-1,Scalar(0,255,0),2);
+            imwrite("/home/rm/图片/NO_"+to_string(target.timestamp)+".bmp",debug);
             goto finish;
+        }
         //计算目标装甲板中心的像素坐标
         target.armorCenter=target.armorRect.center;
         Target before;
@@ -296,46 +196,48 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
         }
         if(back<5)
             before=historyTarget[index];
-        //寻找中心R
+
+        ///寻找中心R
+        float x2,x3,x4,y2,y3,y4;
+        //获取目标装甲板的四个角点
+        Point2f vectors[4];
+        target.armorRect.points(vectors);
+        //计算长宽
+        float dd1= distance(vectors[0],vectors[1]);
+        float dd2= distance(vectors[1],vectors[2]);
+        //筛选出装甲板短边（与锤子柄同向），并计算以目标装甲板中心为原点的短边端点向量
+        if(dd1<dd2)
+        {
+            x2=target.armorCenter.x-vectors[0].x;
+            y2=target.armorCenter.y-vectors[0].y;
+            x3=target.armorCenter.x-vectors[1].x;
+            y3=target.armorCenter.y-vectors[1].y;
+            dd2=dd1;
+        }
+        else
+        {
+            x2=target.armorCenter.x-vectors[1].x;
+            y2=target.armorCenter.y-vectors[1].y;
+            x3=target.armorCenter.x-vectors[2].x;
+            y3=target.armorCenter.y-vectors[2].y;
+            dd1=dd2;
+        }
+        //计算装甲板短边以目标装甲板中心为原点的向量
+        x4=x2-x3;y4=y2-y3;
+        //遍历所有可能的中心R点
         for (Point2f p:possibleCenter)
         {
             //计算待选中心和装甲板中心的角度
             float x1=target.armorCenter.x-p.x;
             float y1=target.armorCenter.y-p.y;
-            float x2,x3,x4,y2,y3,y4;
-            Point2f vectors[4];
-            target.armorRect.points(vectors);
-            float dd1= distance(vectors[0],vectors[1]);
-            float dd2= distance(vectors[1],vectors[2]);
-            float r;
-            //筛选出和锤子柄同向的装甲板短边
-            if(dd1<dd2)
-            {
-                x2=target.armorCenter.x-vectors[0].x;
-                y2=target.armorCenter.y-vectors[0].y;
-                x3=target.armorCenter.x-vectors[1].x;
-                y3=target.armorCenter.y-vectors[1].y;
-                dd2=dd1;
-            }
-            else
-            {
-                x2=target.armorCenter.x-vectors[1].x;
-                y2=target.armorCenter.y-vectors[1].y;
-                x3=target.armorCenter.x-vectors[2].x;
-                y3=target.armorCenter.y-vectors[2].y;
-                dd1=dd2;
-            }
+
             float angle=0;
             float d1 = distance(p,target.armorCenter);
-            float d2 = 0.0f;
 
-            x4=x2-x3;y4=y2-y3;
+            //计算与目标装甲板中心的夹角
             angle=acos((x4*x1+y1*y4)/dd1/d1)*57.3;
-            //qDebug()<<angle;
-            //qDebug()<<"angle:"<<angle<<fabs(target.armorRect.angle);
-            if(index>10&&before.hasTarget)
-                d2 = distance(p,before.center);
-            //筛选出中心R
+
+            //根据半径范围和与短边（锤子柄）的角度筛选出中心R
             if(d1>minRadius && d1 < maxRadius && (angle<10||angle>170) )
             {
                 target.center=p;
@@ -343,12 +245,14 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
                 break;
             }
         }
+
+        //计算目标装甲板中心相对于能量机关中心的像素坐标
+        target.normalizedCenter=Point2f(target.armorCenter.x-target.center.x,target.armorCenter.y-target.center.y);
+        //计算目标装甲板中心相对于能量机关中心x轴的夹角
+        target.armorAngle=myArctan(target.normalizedCenter);
+
         if(before.hasTarget)
         {
-            //计算目标装甲板中心相对于能量机关中心的像素坐标
-            target.normalizedCenter=Point2f(target.armorCenter.x-target.center.x,target.armorCenter.y-target.center.y);
-            //计算目标装甲板中心相对于能量机关中心x轴的夹角
-            target.armorAngle=myArctan(target.normalizedCenter);
 
             float delta=target.armorAngle-before.armorAngle;
             float Delta= fabs(delta);
@@ -369,13 +273,6 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
             //target.lastArmorAngle=target.armorAngle-lastJumpAngle+CV_2PI;
             target.lastArmorAngle= fmod(target.armorAngle-lastJumpAngle+CV_2PI,CV_2PI);
         }
-        else
-        {
-            Mat debug=original.clone();
-            drawContours(debug,contours,-1,Scalar(0,255,0),2);
-//                  drawContours(debug,contours,min,Scalar(255,0,0),5);
-            imwrite("/home/rm/图片/NO_"+to_string(target.timestamp)+".bmp",debug);
-        }
     }
     else
     {
@@ -383,7 +280,6 @@ void ImageProcessor::detectTarget(uint64_t timestamp)
 //        qDebug()<<frame_count<<"has no target";
     }
 
-#endif
 finish:
     emit newTarget(target);
     if(recordingFlag)
@@ -395,7 +291,6 @@ finish:
         historyTarget.pop_front();//移除最早的数据
     indexOfLastJump--;
     historyLock.unlock();
-//    qDebug()<<"历史目标数："<<historyTarget.size();
     frame_count++;
 }
 ///
@@ -406,12 +301,6 @@ finish:
 /// \param timestamp 从相机得到的纳秒级时间戳
 void ImageProcessor::onNewImage(char* img_data,int height,int width,uint64_t timestamp)
 {
-    //打印时间戳
-//    QDateTime dateTime = QDateTime::currentDateTime();
-    // 字符串格式化
-//    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
-//    qDebug()<<QThread::currentThread()<<timestamp;
-//    uint64_t mills_timestamp=dateTime.toMSecsSinceEpoch();
     Mat frame=Mat(height,width,CV_8UC3);
     //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）
     for(int i=0;i<width*height*3;i++)
@@ -425,21 +314,17 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width,uint64_t tim
     frameLock.lock();
     frameQueue.append(frame);
     frameLock.unlock();
-    QFuture<void> future = QtConcurrent::run(&processors,this,&ImageProcessor::detectTarget,timestamp);
 
-//    pretreatment(orignalImage);
-//    Target target=detectTarget(mills_timestamp);
+    //使用线程池来并行处理图像
+    QFuture<void> future = QtConcurrent::run(&processors,this,&ImageProcessor::detectTarget,timestamp);
 
     //删除帧数据
     delete [] img_data;
 }
 void ImageProcessor::onNewImage(Mat frame)
 {
-    //打印时间戳
+    //使用视频时采用系统时间戳
     QDateTime dateTime = QDateTime::currentDateTime();
-    // 字符串格式化
-//    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
-//    qDebug()<<QThread::currentThread()<<timestamp;
     uint64_t mills_timestamp=dateTime.toMSecsSinceEpoch();
     if(recordingFlag)
     {

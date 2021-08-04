@@ -65,88 +65,23 @@ void Predictor::timerEvent(QTimerEvent*)
                 //顺时针旋转
                 if(processor->rotateDirection)
                 {
-                    //如果tau帧内包含着跳符，则使用折算角度
                     if(i-tau < processor->indexOfLastJump && processor->indexOfLastJump <= i)
-                    {
-                        //如果前tao帧的角度比当前帧大
-                        if(list[i-tau].armorAngle>list[i].lastArmorAngle)
-                        {
-                            //角度差即为当前角度减去前tao帧的角度
-                            angleDifference=list[i-tau].armorAngle-list[i].lastArmorAngle;
-                        }
-                            //如果前tao帧的角度比当前帧小（旋转过程中经过了x轴正半轴）
-                        else
-                        {
-                            angleDifference=CV_2PI-list[i].lastArmorAngle+list[i-tau].armorAngle;
-                        }
-                    }
+                        angleDifference=list[i-tau].armorAngle-list[i].lastArmorAngle;
                     else
-                    {
-                        if(list[i-tau].armorAngle>list[i].armorAngle)
-                        {
-                            //角度差即为当前角度减去前tao帧的角度
-                            angleDifference=list[i-tau].armorAngle-list[i].armorAngle;
-                        }
-                            //如果前tao帧的角度比当前帧小（旋转过程中经过了x轴正半轴）
-                        else
-                        {
-                            angleDifference=CV_2PI-list[i].armorAngle+list[i-tau].armorAngle;
-                        }
-                    }
+                        angleDifference=list[i-tau].armorAngle-list[i].armorAngle;
                 }
                 //逆时针旋转
                 else
                 {
-                    //如果tau帧内包含着跳符，则使用折算角度
                     if(i-tau < processor->indexOfLastJump && processor->indexOfLastJump <= i)
-                    {
-                        //如果前tao帧的角度比当前帧小,则用当前角度减去前τ帧的角度
-                        if(list[i-tau].armorAngle<list[i].lastArmorAngle)
-                        {
-                            angleDifference=list[i].lastArmorAngle-list[i-tau].armorAngle;
-                        }
-                            //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）,则用前τ帧的角度减去当前角度
-                        else
-                        {
-                            //角度差即为当前角度减去前tao帧的角度
-                            angleDifference=CV_2PI+list[i].lastArmorAngle-list[i-tau].armorAngle;
-                        }
-                    }
+                        angleDifference=list[i].lastArmorAngle-list[i-tau].armorAngle;
                     else
-                    {
-                        //如果前tao帧的角度比当前帧小,则用当前角度减去前τ帧的角度
-                        if(list[i-tau].armorAngle<list[i].armorAngle)
-                        {
-                            angleDifference=list[i].armorAngle-list[i-tau].armorAngle;
-                        }
-                            //如果前tao帧的角度比当前帧大（旋转过程中经过了x轴正半轴）,则用前τ帧的角度减去当前角度
-                        else
-                        {
-                            //角度差即为当前角度减去前tao帧的角度
-                            angleDifference=CV_2PI+list[i].armorAngle-list[i-tau].armorAngle;
-                        }
-                    }
-
+                        angleDifference=list[i].armorAngle-list[i-tau].armorAngle;
                 }
+                //对齐到0~2π
+                angleDifference = fmod(angleDifference+CV_2PI,CV_2PI);
+                emit newAngleDifference(list[i].timestamp,angleDifference);
 
-//                if(processor->rotateDirection)
-//                {
-//                    if(i-tau < processor->indexOfLastJump)
-//                        angleDifference=list[i-tau].armorAngle-list[i].lastArmorAngle;
-//                    else
-//                        angleDifference=list[i-tau].armorAngle-list[i].armorAngle;
-//                }
-//                else
-//                {
-//                    if(i-tau < processor->indexOfLastJump)
-//                        angleDifference=list[i].lastArmorAngle-list[i-tau].armorAngle;
-//                    else
-//                        angleDifference=list[i].armorAngle-list[i-tau].armorAngle;
-//                }
-                //qDebug()<<angleDifference;
-                //angleDifference = fmod(angleDifference+CV_2PI,CV_2PI);
-                emit newPhi(list[i].timestamp,angleDifference);
-                //qDebug()<<"angleDifference:"<<angleDifference;
                 if(angleDifference>0.1&&angleDifference<1.5)
                 {
                     count++;
@@ -163,10 +98,6 @@ void Predictor::timerEvent(QTimerEvent*)
                             _phi                 // 待估计参数
                     );
                 }
-//                else
-//                {
-//                    qDebug()<<list[i].index<<"角度："<<list[i-tau].armorAngle<<list[i].armorAngle<<list[i].lastArmorAngle;
-//                }
             }
         }
         //有效样本足够多才能进行拟合
@@ -194,11 +125,18 @@ void Predictor::timerEvent(QTimerEvent*)
         delete problem;
     }
 }
+/// pos_fun C取0时角速度函数的积分
+/// \param t 自变量t
+/// \param phi 相位
+/// \return 角度
 float pos_fun(float t,float phi)
 {
     return (1.305 * t) - (0.416666666666667 * cos(1.884 *t + phi ));
 }
 
+/// predictPoint 获取预测点
+/// \param predictTime 预测时间
+/// \return 像素坐标下的预测点
 Point2f Predictor::predictPoint(float predictTime)
 {
     static float lastX,lastY;
@@ -209,31 +147,32 @@ Point2f Predictor::predictPoint(float predictTime)
     float timePassed=((float)(currentTarget.timestamp-startTimestamp))/1000000000.0;
     predictAngleDifference = pos_fun(predictTime+timePassed,phi)-pos_fun(timePassed,phi);
 //    qDebug()<<phi<<timePassed<<predictAngleDifference;
-    auto angle= fmod(currentTarget.armorAngle-predictAngleDifference+CV_2PI,CV_2PI);
-    emit newSpeed(currentTarget.timestamp+(int)(predictTime*1000000000),angle);
-//    float predictAngleDifference=0.8333333333*sin(0.942*predictTime)*sin(1.884*(timePassed)+0.942/predictTime+phi)+1.305*predictTime;
+//    auto angle= fmod(currentTarget.armorAngle-predictAngleDifference+CV_2PI,CV_2PI);
     float x=currentTarget.normalizedCenter.x;
     float y=currentTarget.normalizedCenter.y;
-    //顺时针旋转
-    //qDebug()<<"direction:"<<processor->rotateDirection;
+    //如果是顺时针旋转则翻转预测角
     if(!processor->rotateDirection)
         predictAngleDifference=-predictAngleDifference;
+    //根据旋转矩阵根据当前帧计算预测点坐标
     tmp.x=x*cos(predictAngleDifference)-y*sin(predictAngleDifference);
-//    if(abs(tmp.x-lastX)<10)
     tmp.x=0.1*tmp.x+0.9*lastX;
     lastX=tmp.x;
+
     tmp.y=y*cos(predictAngleDifference)+x*sin(predictAngleDifference);
-//    if(abs(tmp.y-lastY)<10)
     tmp.y=0.1*tmp.y+0.9*lastY;
     lastY=tmp.y;
     return currentTarget.center+tmp;
 }
+
+/// getSpeed 预测角速度
+/// \param predictTime 预测时间
+/// \return
 float Predictor::getSpeed(float predictTime)
 {
     Target currentTarget;
     currentTarget=processor->historyTarget.last();
     float timePassed=((float)(currentTarget.timestamp-startTimestamp))/1000000000.0;
     float speed=0.785*sin(1.884*(predictTime+timePassed)+phi)+1.305;
-    //emit newSpeed(currentTarget.timestamp,speed);
+    emit newSpeed(currentTarget.timestamp,speed);
     return speed;
 }

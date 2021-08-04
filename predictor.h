@@ -42,6 +42,7 @@ protected:
 signals:
     void newPhi(uint64_t timestamp,float phi);
     void newSpeed(uint64_t timestamp,float phi);
+    void newAngleDifference(uint64_t timestamp,float angleDifference);
 };
 
 #endif // PREDICTOR_H
