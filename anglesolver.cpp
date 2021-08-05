@@ -1,3 +1,6 @@
+/* Copyright (c) 2020 Mountain
+ * https://github.com/QunShanHe/JLURoboVision
+ */
 #include <iostream>
 #include "anglesolver.h"
 
