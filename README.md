@@ -37,7 +37,7 @@ struct __attribute__((packed)) RecvFrame
     uint8_t rotateDricetion = true; //旋转方向,默认顺时针
     float timeBais;                 //预测时间偏置，实际未使用
     float compensateBais;           //弹道补偿偏置，实际未使用
-    uint8_t gimbal_mode;	        //云台模式
+    uint8_t gimbal_mode;	    //云台模式
 };
 ```
 
