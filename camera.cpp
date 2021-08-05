@@ -120,7 +120,7 @@ void Camera::timerEvent(QTimerEvent*)
         if(videoFile->read(frame))
         {
             //调换颜色通道
-            cvtColor(frame,frame,COLOR_RGB2BGR);
+//            cvtColor(frame,frame,COLOR_RGB2BGR);
             emit newImage(frame);
         }
     }

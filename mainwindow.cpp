@@ -160,7 +160,8 @@ void MainWindow::timerEvent(QTimerEvent*)
     {
         //设置转向
         processor->rotateDirection=transceiver->recvFrame.rotateDricetion;
-        processor->rotateDirection= false;
+        //TODO:手动强制设置方向则取消注释下方代码
+//        processor->rotateDirection= false;
         if(processor->historyTarget.size()>0 && processor->historyTarget.isDetached())
         {
             Target tmp=processor->historyTarget.last();
@@ -195,6 +196,7 @@ void MainWindow::timerEvent(QTimerEvent*)
                 //跟随
 
                 //如果处于自瞄模式则跟随预测点
+                //TODO:根据实际云台模式修改取值
                 if(transceiver->recvFrame.gimbal_mode==4)
                 {
                     //瞄准预测点

@@ -51,6 +51,9 @@ void Predictor::timerEvent(QTimerEvent*)
         QVector<Target> list(processor->historyTarget);
         int startIndex=list.size()-1-samples;
         //qDebug()<<"startIndex:"<<startIndex;
+        //如果目标队列被占用则跳过本次迭代
+        if(!processor->historyTarget.isDetached())
+            return;
         Target currentTarget=list.last();
         //可能的开始时间，因为拟合结果最后不一定被采纳
         uint64_t possibleStartTimestamp=currentTarget.timestamp;
@@ -143,6 +146,7 @@ Point2f Predictor::predictPoint(float predictTime)
     Point2f tmp;
     float predictAngleDifference=0.0;
     Target currentTarget;
+    while(!processor->historyTarget.isDetached());//等待目标历史队列解除占用
     currentTarget=processor->historyTarget.last();
     float timePassed=((float)(currentTarget.timestamp-startTimestamp))/1000000000.0;
     predictAngleDifference = pos_fun(predictTime+timePassed,phi)-pos_fun(timePassed,phi);
@@ -170,6 +174,7 @@ Point2f Predictor::predictPoint(float predictTime)
 float Predictor::getSpeed(float predictTime)
 {
     Target currentTarget;
+    while(!processor->historyTarget.isDetached());//等待目标历史队列解除占用
     currentTarget=processor->historyTarget.last();
     float timePassed=((float)(currentTarget.timestamp-startTimestamp))/1000000000.0;
     float speed=0.785*sin(1.884*(predictTime+timePassed)+phi)+1.305;
