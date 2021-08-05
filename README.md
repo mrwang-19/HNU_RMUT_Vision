@@ -91,7 +91,7 @@ sudo ./install-ceres.sh
 ## 各类主要功能说明
 | 类名            | 功能                                                         |
 | -------------- | ------------------------------------------------------------ |
-| AngleSolver    | 角度结算类                                                   |
+| AngleSolver    | 角度解算类                                                   |
 | Camera         | 相机包装类，封装了大恒的API和采用视频时模拟相机              |
 | ChartPainter   | 曲线图绘制类，继承自QCustomPlot                              |
 | ImageProcessor | 图像处理类                                                   |
