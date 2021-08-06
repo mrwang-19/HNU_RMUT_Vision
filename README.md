@@ -110,6 +110,8 @@ apt-get install cmake
 | Pid            | PID类                                                        |
 | Transceiver    | 串口收发类                                                   |
 | Target         | 能量机关目标类，储存每帧识别到的能量机关信息                 |
+## 线程关系流程图
+![线程关系流程图](./imgs/线程关系流程图.png)
 
 ## 未来优化方向
 
