@@ -72,6 +72,7 @@ sudo ./install-ceres.sh
 则需要拟合的式子为，其中 τ=0.5s ，t来自于相机采集的时间戳：
 
 <img src="https://www.zhihu.com/equation?tex=%5Cint%5F%7Bt%2D%5Ctau%7D%5E%7Bt%7D%5B0%2E785%20%5Ctimes%20%5Csin%20%281%2E884%20%5Ctimes%20t%2B%5Cvarphi%29%20%2B%201%2E305%5D%20dt%5C%5C%0A%3D1%2E305%CF%84%2B0%2E41666%5Cdots%20%5Cleft%28%2D%5Ccos%20%5Cleft%28%CF%86%2B1%2E884t%5Cright%29%2B%5Ccos%20%5Cleft%28%CF%86%2B1%2E884%5Cleft%28%2D%CF%84%2Bt%5Cright%29%5Cright%29%5Cright%29" alt="公式2" style="zoom:300%;" />
+
 ![image-20210805234313091](./imgs/image-20210805234313091.png)
 
 实际测试时采集1.5s内的角度差样本进行拟合得到的相位较为准确。由于当 τ=0.5s 时，上式（图中绿色曲线）取值不超过 1.5π ，因而添加样本时可以此滤除一部分非预期的数据，确保拟合得到的相位准确可信。
