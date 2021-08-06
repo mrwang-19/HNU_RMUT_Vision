@@ -110,9 +110,7 @@ void MainWindow::on_OpenButton_clicked()
         connect(&transceiverHandler,&QThread::finished,transceiver,&ImageProcessor::deleteLater);
         transceiverHandler.start();
         //创建绘图线程
-        ui->chartPainter->moveToThread(&chartPainterHandler);
         connect(processor,&ImageProcessor::newTarget,ui->chartPainter,&ChartPainter::onTarget);
-        chartPainterHandler.start();
         //创建预测线程
         predictor = new Predictor(processor,(frameRate*1.5));   //拟合1.5s
         connect(&predictorHandler,&QThread::finished,predictor,&Predictor::deleteLater);
@@ -133,8 +131,6 @@ void MainWindow::on_OpenButton_clicked()
         killTimer(timerID);
         //
         cam.close();
-        //销毁绘图线程
-        chartPainterHandler.quit();
         //销毁预测线程
         predictorHandler.quit();
         //销毁收发线程

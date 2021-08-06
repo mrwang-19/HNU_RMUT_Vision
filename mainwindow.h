@@ -88,7 +88,6 @@ private:
     QThread transceiverHandler;             //串口收发线程句柄
     Predictor * predictor = nullptr;        //预测线程
     QThread predictorHandler;               //预测线程句柄
-    QThread chartPainterHandler;            //绘图线程句柄
     pid pid_yaw=pid(0.015,0.002,0.0,30);    //yaw轴pid类
     pid pid_pit=pid(0.015,0.002,0.0,20);    //pitch轴pid类
     uint64 lastTimestamp;                   //上次迭代时间
