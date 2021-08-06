@@ -67,11 +67,11 @@ sudo ./install-ceres.sh
 主要原理是利用Google的ceres-slover非线性优化库拟合得到当前能量机关旋转的相位![equation](https://www.zhihu.com/equation?tex=\varphi) ，因而无需等待能量机关旋转速度达到极大值或极小值。在实际测试中由于采集帧率较高，如果采用相邻两帧的能量机关角度计算角速度，在能量机关转速较慢时两帧识别出的目标装甲板角度经常不变，导致出现0速度，对拟合引入误差。因而采用了间隔0.5s的两帧间能量机关的角度差作为拟合的原始数据（若跳符则折算到跳转前计算角度差）。
 若采集最后一个角度差样本时能量机关旋转的角度式为：
 
-![公式1](./imgs/公式1.png)
+<img src="https://www.zhihu.com/equation?tex=0%2E785%20%5Ctimes%20%5Csin%20%281%2E884%20%5Ctimes%20t%2B%5Cvarphi%29%20%2B%201%2E305" alt="公式1" style="zoom:300%;" />
 
 则需要拟合的式子为，其中 τ=0.5s ，t来自于相机采集的时间戳：
-![公式2](./imgs/公式2.png)
 
+<img src="https://www.zhihu.com/equation?tex=%5Cint%5F%7Bt%2D%5Ctau%7D%5E%7Bt%7D%5B0%2E785%20%5Ctimes%20%5Csin%20%281%2E884%20%5Ctimes%20t%2B%5Cvarphi%29%20%2B%201%2E305%5D%20dt%5C%5C%0A%3D1%2E305%CF%84%2B0%2E41666%5Cdots%20%5Cleft%28%2D%5Ccos%20%5Cleft%28%CF%86%2B1%2E884t%5Cright%29%2B%5Ccos%20%5Cleft%28%CF%86%2B1%2E884%5Cleft%28%2D%CF%84%2Bt%5Cright%29%5Cright%29%5Cright%29" alt="公式2" style="zoom:300%;" />
 ![image-20210805234313091](./imgs/image-20210805234313091.png)
 
 实际测试时采集1.5s内的角度差样本进行拟合得到的相位较为准确。由于当 τ=0.5s 时，上式（图中绿色曲线）取值不超过 1.5π ，因而添加样本时可以此滤除一部分非预期的数据，确保拟合得到的相位准确可信。
