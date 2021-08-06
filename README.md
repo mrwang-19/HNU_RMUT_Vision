@@ -12,7 +12,7 @@ https://user-images.githubusercontent.com/20651205/128491776-7a804bce-841f-401e-
 | -------- | ------------------------ |
 | 相机 | 大恒MER-139-210U3C |
 | 镜头 | HN-P-0628-6M-C1-1.8 （6mm焦距） |
-| 相机位置 | 云台，枪管下方 |
+| 相机位置 | 云台，枪管下方，倒置 |
 | 操作系统 | Ubuntu 18.04 LTS |
 | 软件框架 | QT 5.12.9 |
 | 开发环境 | QTcreator 或 Jetbrains Clion |
