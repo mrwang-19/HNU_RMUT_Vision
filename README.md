@@ -41,9 +41,11 @@ struct __attribute__((packed)) RecvFrame
 };
 ```
 
-## 软件依赖库
+## 软件依赖库及部署
 
 OpenCV3 or OpenCV4、ceres-solver-2.0.0、QT5.12.9、QCustomPlot、cmake 3.5
+
+[OpenCV安装教程](https://zhuanlan.zhihu.com/p/113552412)
 
 安装ceres-slover库：
 
@@ -52,7 +54,14 @@ chmod +x ./install-ceres.sh
 sudo ./install-ceres.sh
 ```
 
+[QT5.12.9下载地址](https://mirrors.tuna.tsinghua.edu.cn/qt/official_releases/qt/5.12/5.12.9/qt-opensource-linux-x64-5.12.9.run)
 
+QCustomPlot已经包含在本仓库代码中
+
+cmake安装：
+```shell
+apt-get install cmake
+```
 
 ## 识别原理
 
