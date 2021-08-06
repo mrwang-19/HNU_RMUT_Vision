@@ -77,7 +77,7 @@ apt-get install cmake
 
 ## 预测原理
 
-主要原理是利用Google的ceres-slover非线性优化库拟合得到当前能量机关旋转的相位![equation](https://www.zhihu.com/equation?tex=\varphi) ，因而无需等待能量机关旋转速度达到极大值或极小值。在实际测试中由于采集帧率较高，如果采用相邻两帧的能量机关角度计算角速度，在能量机关转速较慢时两帧识别出的目标装甲板角度经常不变，导致出现0速度，对拟合引入误差。因而采用了间隔`0.5s`的两帧间能量机关的角度差作为拟合的原始数据（若跳符则折算到跳转前计算角度差）。
+主要原理是利用Google的ceres-slover非线性优化库拟合得到当前能量机关旋转的相位![equation](https://www.zhihu.com/equation?tex=\varphi) ([该部分核心代码见](https://github.com/0x504B0304/HNU_RMUT_Vision/blob/main/predictor.cpp#L21))，因而无需等待能量机关旋转速度达到极大值或极小值。在实际测试中由于采集帧率较高，如果采用相邻两帧的能量机关角度计算角速度，在能量机关转速较慢时两帧识别出的目标装甲板角度经常不变，导致出现0速度，对拟合引入误差。因而采用了间隔`0.5s`的两帧间能量机关的角度差作为拟合的原始数据（若跳符则折算到跳转前计算角度差）。
 若采集最后一个角度差样本时能量机关旋转的角度式为：
 
 <img src="https://www.zhihu.com/equation?tex=0%2E785%20%5Ctimes%20%5Csin%20%281%2E884%20%5Ctimes%20t%2B%5Cvarphi%29%20%2B%201%2E305" alt="公式1" style="zoom:300%;" />
