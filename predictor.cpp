@@ -11,7 +11,7 @@ Predictor::Predictor(ImageProcessor * processor,int samples,QObject *parent) :
     // 这里有很多配置项可以填
     options.linear_solver_type = ceres::DENSE_QR;  // 增量方程如何求解
     options.minimizer_progress_to_stdout = false;   // 输出到cout
-    options.num_threads=6;
+    options.num_threads=3;
     timerID=startTimer(30);
 }
 
@@ -38,6 +38,7 @@ Predictor::~Predictor()
 }
 void Predictor::timerEvent(QTimerEvent*)
 {
+    double _phi[1]={0.0};
     if(processor->historyTarget.size()>samples)
     {
         problem=new ceres::Problem();
@@ -57,18 +58,19 @@ void Predictor::timerEvent(QTimerEvent*)
                         new CURVE_FITTING_COST ((double)(list[i].timestamp-start.timestamp)/1000,(double)list[i].angleDifference,tao)
                     ),
                         nullptr,            // 核函数，这里不使用，为空
-                        phi                 // 待估计参数
+                        _phi                 // 待估计参数
                 );
             }
         }
         if(count>samples-10)
         {
-//            problem->SetParameterLowerBound(phi,0,-3.1415926536);
-            problem->SetParameterUpperBound(phi,0,2*3.1415926536);
+            problem->SetParameterLowerBound(_phi,0,-3.1415926536);
+            problem->SetParameterUpperBound(_phi,0,3.1415926536);
             ceres::Solver::Summary summary;                // 优化信息
             ceres::Solve ( options,problem, &summary );  // 开始优化
 //            cout<<summary.BriefReport() <<endl;
-            emit newTao(startTimestamp/1000.0,phi[0]);
+            phi=_phi[0];
+            emit newTao(startTimestamp/1000.0,_phi[0]);
         }
         delete problem;
     }
@@ -76,8 +78,10 @@ void Predictor::timerEvent(QTimerEvent*)
 Point2f Predictor::predictPoint(float predictTime)
 {
     Target currentTarget=processor->historyTarget.last();
-    float predictAngleDifference=0.8333333334*sin(0.942*predictTime)* ceres::sin(1.884*(currentTarget.timestamp-startTimestamp)/1000+0.942*predictTime+phi[0])+1.305*predictTime;
     Point2f tmp;
+    float timePassed=(QDateTime::currentDateTime().toMSecsSinceEpoch()-startTimestamp)/1000.0;
+//    float predictAngleDifference=0.8333333334*sin(0.942*predictTime)* ceres::sin(1.884*(currentTarget.timestamp-startTimestamp)/1000+0.942*predictTime+phi)+1.305*predictTime;
+    float predictAngleDifference=0.8333333333*sin(0.942*predictTime)*sin(1.884*(timePassed)+0.942*predictTime+phi)+1.305*predictTime;
     float x=currentTarget.normalizedCenter.x;
     float y=currentTarget.normalizedCenter.y;
     //顺时针旋转

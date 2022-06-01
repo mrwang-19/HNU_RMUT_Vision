@@ -74,6 +74,7 @@ private:
     QThread predictorHandler;               //预测线程句柄
     QThread chartPainterHandler;            //绘图线程句柄
     pid pid_yaw=pid(0.015,0.002,0.0,90),pid_pit=pid(0.015,0.002,0.0,20);
+    uint64 lastTimestamp;                   //上次迭代时间
     int timerID;                            //定时器ID
     int width,height,exposureTime;
 

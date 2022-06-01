@@ -211,8 +211,8 @@ void ImageProcessor::onNewImage(char* img_data,int height,int width)
     //打印时间戳
     QDateTime dateTime = QDateTime::currentDateTime();
     // 字符串格式化
-//    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
-//    qDebug()<<QThread::currentThread()<<timestamp;
+    QString timestamp = dateTime.toString("hh:mm:ss.zzz");
+    qDebug()<<QThread::currentThread()<<timestamp;
     uint64_t mills_timestamp=dateTime.toMSecsSinceEpoch();
     Mat frame=Mat(height,width,CV_8UC3);
     //逆向拷贝图像数据，此后相机倒放拍摄的照片已被转正，但通道顺序变为RGB（默认为BGR）

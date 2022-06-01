@@ -210,10 +210,18 @@ void MainWindow::timerEvent(QTimerEvent*)
         if(processor->historyTarget.size()>0)
         {
             Target tmp=processor->historyTarget.last();
-
+            Point2f p;
             if(processor->frameQueue.size()>0)
             {
-                auto p=predictor->predictPoint(1.5);
+                //打印时间戳
+                QDateTime dateTime = QDateTime::currentDateTime();
+//                // 字符串格式化
+//                QString timestamp = dateTime.toString("hh:mm:ss.zzz");
+//                qDebug()<<QThread::currentThread()<<timestamp;
+                float timePassed=(dateTime.toMSecsSinceEpoch()-lastTimestamp)/1000.0;
+                if(timePassed>1.5)
+                    lastTimestamp=dateTime.currentDateTime().toMSecsSinceEpoch();
+                p=predictor->predictPoint(timePassed);
                 Mat img;
                 processor->frameQueue.last().copyTo(img);
                 circle(img,tmp.center,15,Scalar(0,255,0),-1);
@@ -236,8 +244,8 @@ void MainWindow::timerEvent(QTimerEvent*)
             ui->yawAngleLable->setText(tr("%1").arg(transceiver->recvFrame.yawAngleGet));
             if(ui->checkBoxFollowCenter->isChecked())
             {
-                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(tmp.center.x,width/2);
-                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(tmp.center.y,height/2);
+                transceiver->sendFrame.yawAngleSet=pid_yaw.pid_calc(p.x,width/2+ui->hBaisSpinBox->value());
+                transceiver->sendFrame.pitchAngleSet=pid_pit.pid_calc(p.y,height/2+ui->vBaisSpinBox->value());
             }
             else if(ui->checkBoxFollowArmor->isChecked())
             {

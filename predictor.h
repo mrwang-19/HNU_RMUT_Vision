@@ -24,7 +24,7 @@ public:
 //    float predictTime;          //预测时间
     float tao;                  //观测时间
     int samples;                //样本数量
-    double phi[1]={0.0};        //拟合得到的相位
+    double phi;        //拟合得到的相位
     int timerID;                //定时器ID
     uint64 startTimestamp;
     Point2f predictPoint(float predictTime);   //计算预测角度差；
