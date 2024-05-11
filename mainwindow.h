@@ -35,5 +35,7 @@ private:
     bool recording_flag=false;
     static void GX_STDC OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame);
     static QImage cvMat2QImage(const cv::Mat& mat);
+    bool inline detect(cv::Mat src,cv::Point2f &center,cv::Point2f &armor);
+    static bool cam_init(GX_DEV_HANDLE hDevice);
 };
 #endif // MAINWINDOW_H

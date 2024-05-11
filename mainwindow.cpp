@@ -9,9 +9,11 @@
 using namespace cv;
 using namespace std;
 //Mat src(1024,1280,CV_8UC3);
-#define WIDTH 1280
-#define HEIGHT 1024
+#define WIDTH 1024
+#define HEIGHT 768
 #define PI 3.1415926
+#define _100_FPS
+
 MainWindow* MainWindow::pointer_=nullptr;
 
 MainWindow::MainWindow(QWidget *parent)
@@ -22,8 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->ImagelLabel->setScaledContents(true);
     rec=new VideoWriter;
     pointer_=this;
-//    this->self=this;
-    connect(this,&MainWindow::new_image,this,&MainWindow::update_img);
+    connect(this,&MainWindow::new_image,this,&MainWindow::update_img,Qt::QueuedConnection);
 }
 
 MainWindow::~MainWindow()
@@ -59,13 +60,12 @@ void GX_STDC MainWindow::OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame)
              }
             return;
         }
+        //发射信号，传输图片数据
         emit pointer_->new_image(pRGB24Buf,pFrame->nHeight,pFrame->nWidth);
-
-//        src.resize(pFrame->nHeight,pFrame->nWidth);
-//        memcpy(src.data,pRGB24Buf,pFrame->nWidth*pFrame->nHeight*3);
-
-//        imshow("image",src);
     }
+//    QDateTime dateTime = QDateTime::currentDateTime();
+//    QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
+//    qDebug()<<timestamp;
     return;
 }
 
@@ -88,15 +88,12 @@ void MainWindow::on_OpenButton_clicked()
         auto ststus=GXOpenDevice(&stOpenParam, &hDevice);
         if(ststus==GX_STATUS_SUCCESS)
         {
-            //自动白平衡
-            status = GXSetEnum(hDevice,GX_ENUM_BALANCE_WHITE_AUTO,
-            GX_BALANCE_WHITE_AUTO_CONTINUOUS);
+            //初始化相机参数
+            cam_init(hDevice);
+            //注册采集回调函数
             GXRegisterCaptureCallback(hDevice, NULL,OnFrameCallbackFun);
+            //发送开采命令
             GXSendCommand(hDevice, GX_COMMAND_ACQUISITION_START);
-//            namedWindow("image", WINDOW_NORMAL);
-//            while (1) {
-//                imshow("img",src);
-//            }
         }
     }
 }
@@ -116,7 +113,6 @@ Mat pretreatment(Mat frame)
 }
 void MainWindow::update_img(char* img_data,int height,int width)
 {
-//    qDebug()<<img_data;
     auto src = Mat(height,width,CV_8UC3);
     auto fliped = Mat(height,width,CV_8UC3);
     memcpy(src.data,img_data,width*height*3);
@@ -126,12 +122,84 @@ void MainWindow::update_img(char* img_data,int height,int width)
         (*rec)<<fliped;
 //    else
     Mat bin=pretreatment(fliped);
+    Point2f center,armor;
+    detect(bin,center,armor);
+
+//    drawContours(fliped,contours,max,Scalar(0,255,0),5);
+//    drawContours(fliped,contours,min,Scalar(255,0,0),5);
+//    QImage img=cvMat2QImage(fliped);
+//    cvtColor(fliped,src, cv::COLOR_RGB2BGR);
+//    QImage img=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
+//    QImage img=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
+//    ui->ImagelLabel->setPixmap(QPixmap::fromImage(img));
+//    cv::imshow("img",fliped);
+    //打印时间戳
+    QDateTime dateTime = QDateTime::currentDateTime();
+    QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
+    qDebug()<<timestamp;
+    delete [] img_data;
+}
+
+
+void MainWindow::on_RecordButton_clicked()
+{
+    if(!recording_flag)
+    {
+        QDateTime dateTime = QDateTime::currentDateTime();
+        QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
+        bool tmp = rec->open("./1.mp4",VideoWriter::fourcc('X', 'V', 'I', 'D'),100,Size(WIDTH,HEIGHT),true);
+        qDebug()<<tmp;
+        ui->RecordButton->setText("Stop Record");
+        recording_flag=true;
+    }
+    else
+    {
+        recording_flag=false;
+        ui->RecordButton->setText("Record");
+        rec->release();
+    }
+}
+
+/**
+ * @brief MainWindow::cam_init 初始化相机参数，在开采前调用（但本函数不开始采集）
+ * @param hDevice 相机句柄
+ */
+bool MainWindow::cam_init(GX_DEV_HANDLE hDevice)
+{
+    //自动白平衡
+    auto status = GXSetEnum(hDevice,GX_ENUM_BALANCE_WHITE_AUTO,GX_BALANCE_WHITE_AUTO_CONTINUOUS);
+    //固定曝光时长
+    status &= GXSetEnum(hDevice, GX_ENUM_EXPOSURE_MODE, GX_EXPOSURE_MODE_TIMED);
+    //按照帧率设置曝光时长
+#ifdef _100_FPS
+    status &= GXSetFloat(hDevice, GX_FLOAT_EXPOSURE_TIME, 10000.0000);
+#elif defined (_150_FPS)
+    status &= GXSetFloat(hDevice, GX_FLOAT_EXPOSURE_TIME, 6600.0000);
+#endif
+    //设置分辨率
+    status &= GXSetInt(hDevice, GX_INT_WIDTH, WIDTH);
+    status &= GXSetInt(hDevice, GX_INT_HEIGHT, HEIGHT);
+    //设置偏移量，确保画面中心为相机中心
+    status &= GXSetInt(hDevice, GX_INT_OFFSET_X, (1280-WIDTH)/2);
+    status &= GXSetInt(hDevice, GX_INT_OFFSET_Y, (1024-HEIGHT)/2);
+    return status;
+}
+/**
+ * @brief MainWindow::detect 由预处理过的视频识别能量机关的中心和目标装甲板的像素坐标
+ * @param src 经过预处理（二值化）的图片
+ * @param center 能量机关的中心
+ * @param armor 目标装甲板的中心
+ * @return 是否检测到目标
+ */
+bool MainWindow::detect(cv::Mat src,cv::Point2f &center,cv::Point2f &armor)
+{
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
-    findContours(bin,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
-    int max=0,min=0;
+    findContours(src,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+//    int max=0,min=0;
     float max_area=0.0,min_area=10000.0;
-    Point2f center1,center2;
+    if(contours.size()<2)
+        return false;
     for(int i=0;i<contours.size();i++)
     {
         auto rect=minAreaRect(contours[i]);
@@ -139,16 +207,15 @@ void MainWindow::update_img(char* img_data,int height,int width)
         if(tmp>max_area)
         {
             max_area=tmp;
-            max=i;
-            center1=rect.center;
+//            max=i;
+            armor=rect.center;
         }
         else if(tmp<min_area)
         {
             min_area=tmp;
-            min=i;
-            center2=rect.center;
+//            min=i;
+            center=rect.center;
         }
-        qDebug()<<center1.x<<" "<<center1.y<<" "<<center2.x<<" "<<center2.y;
 //        qDebug()<<i<<":"<<rect.size.aspectRatio();
 //        if(abs(rect.size.aspectRatio()-0.6)<0.5)
 //        {
@@ -172,45 +239,8 @@ void MainWindow::update_img(char* img_data,int height,int width)
 //            max_2=i;
 //        }
     }
-    drawContours(fliped,contours,max,Scalar(0,255,0),5);
-    drawContours(fliped,contours,min,Scalar(255,0,0),5);
-//    QImage img=cvMat2QImage(fliped);
-    cvtColor(fliped,src, cv::COLOR_RGB2BGR);
-    QImage img=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
-//    QImage img=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
-    ui->ImagelLabel->setPixmap(QPixmap::fromImage(img));
-//    cv::imshow("img",fliped);
-//    //output timetamp
-    QDateTime dateTime = QDateTime::currentDateTime();
-    QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
-    qDebug()<<timestamp;
-    delete [] img_data;
+    return true;
 }
-
-
-
-
-
-void MainWindow::on_RecordButton_clicked()
-{
-    if(!recording_flag)
-    {
-        QDateTime dateTime = QDateTime::currentDateTime();
-        QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
-//        qDebug()<<timestamp;
-        bool tmp = rec->open("./1.mp4",VideoWriter::fourcc('X', 'V', 'I', 'D'),100,Size(WIDTH,HEIGHT),true);
-        qDebug()<<tmp;
-        ui->RecordButton->setText("Stop Record");
-        recording_flag=true;
-    }
-    else
-    {
-        recording_flag=false;
-        ui->RecordButton->setText("Record");
-        rec->release();
-    }
-}
-
 QImage MainWindow::cvMat2QImage(const cv::Mat& mat)
 {
     // 8-bits unsigned, NO. OF CHANNELS = 1
