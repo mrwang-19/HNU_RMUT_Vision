@@ -34,5 +34,6 @@ private:
     cv::VideoWriter *rec =nullptr;
     bool recording_flag=false;
     static void GX_STDC OnFrameCallbackFun(GX_FRAME_CALLBACK_PARAM* pFrame);
+    static QImage cvMat2QImage(const cv::Mat& mat);
 };
 #endif // MAINWINDOW_H

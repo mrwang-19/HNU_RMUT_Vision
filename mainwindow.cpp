@@ -3,11 +3,15 @@
 #include <QFutureInterfaceBase>
 #include <QDateTime>
 #include <QDebug>
+#include <vector>
+
 //202-4-24
 using namespace cv;
+using namespace std;
 //Mat src(1024,1280,CV_8UC3);
 #define WIDTH 1280
 #define HEIGHT 1024
+#define PI 3.1415926
 MainWindow* MainWindow::pointer_=nullptr;
 
 MainWindow::MainWindow(QWidget *parent)
@@ -15,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->ImagelLabel->setScaledContents(true);
     rec=new VideoWriter;
     pointer_=this;
 //    this->self=this;
@@ -111,16 +116,70 @@ Mat pretreatment(Mat frame)
 }
 void MainWindow::update_img(char* img_data,int height,int width)
 {
+//    qDebug()<<img_data;
     auto src = Mat(height,width,CV_8UC3);
     auto fliped = Mat(height,width,CV_8UC3);
     memcpy(src.data,img_data,width*height*3);
+//    cv::imshow("img",src);
     cv::flip(src,fliped,-1);
     if(rec->isOpened())
         (*rec)<<fliped;
-    else
-        cv::imshow("img",fliped);
+//    else
     Mat bin=pretreatment(fliped);
-    //cv::imshow("img",fliped);
+    vector<vector<Point>> contours;
+    vector<Vec4i> hierarchy;
+    findContours(bin,contours,hierarchy,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
+    int max=0,min=0;
+    float max_area=0.0,min_area=10000.0;
+    Point2f center1,center2;
+    for(int i=0;i<contours.size();i++)
+    {
+        auto rect=minAreaRect(contours[i]);
+        auto tmp = rect.size.area();
+        if(tmp>max_area)
+        {
+            max_area=tmp;
+            max=i;
+            center1=rect.center;
+        }
+        else if(tmp<min_area)
+        {
+            min_area=tmp;
+            min=i;
+            center2=rect.center;
+        }
+        qDebug()<<center1.x<<" "<<center1.y<<" "<<center2.x<<" "<<center2.y;
+//        qDebug()<<i<<":"<<rect.size.aspectRatio();
+//        if(abs(rect.size.aspectRatio()-0.6)<0.5)
+//        {
+//            max_1=i;
+//        }
+//        else {
+//            max_2=i;
+//        }
+//        if()
+//        minEnclosingCircle(contours[i],center,radius);
+//        float r=contourArea(contours[i])/(rect.area());
+//        if(r>rate_1)
+//        {
+//            rate_1=r;
+//            max_1=i;
+//        }
+//        r=contourArea(contours[i])/(PI*radius*radius);
+//        if(r>rate_2)
+//        {
+//            rate_1=r;
+//            max_2=i;
+//        }
+    }
+    drawContours(fliped,contours,max,Scalar(0,255,0),5);
+    drawContours(fliped,contours,min,Scalar(255,0,0),5);
+//    QImage img=cvMat2QImage(fliped);
+    cvtColor(fliped,src, cv::COLOR_RGB2BGR);
+    QImage img=QImage((const uchar*)src.data,width,height,QImage::Format_RGB888);
+//    QImage img=QImage((const uchar*)bin.data,width,height,QImage::Format_Indexed8);
+    ui->ImagelLabel->setPixmap(QPixmap::fromImage(img));
+//    cv::imshow("img",fliped);
 //    //output timetamp
     QDateTime dateTime = QDateTime::currentDateTime();
     QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
@@ -128,13 +187,19 @@ void MainWindow::update_img(char* img_data,int height,int width)
     delete [] img_data;
 }
 
+
+
+
+
 void MainWindow::on_RecordButton_clicked()
 {
     if(!recording_flag)
     {
         QDateTime dateTime = QDateTime::currentDateTime();
         QString timestamp = dateTime.toString("yyyy-MM-dd hh:mm:ss.zzz");
-        rec->open("/home/rm/视频/"+timestamp.toStdString()+".avi",CV_FOURCC('X','V','I','D'),150,Size(WIDTH,HEIGHT),true);
+//        qDebug()<<timestamp;
+        bool tmp = rec->open("./1.mp4",VideoWriter::fourcc('X', 'V', 'I', 'D'),100,Size(WIDTH,HEIGHT),true);
+        qDebug()<<tmp;
         ui->RecordButton->setText("Stop Record");
         recording_flag=true;
     }
@@ -143,5 +208,52 @@ void MainWindow::on_RecordButton_clicked()
         recording_flag=false;
         ui->RecordButton->setText("Record");
         rec->release();
+    }
+}
+
+QImage MainWindow::cvMat2QImage(const cv::Mat& mat)
+{
+    // 8-bits unsigned, NO. OF CHANNELS = 1
+    if(mat.type() == CV_8UC1)
+    {
+        QImage image(mat.cols, mat.rows, QImage::Format_Indexed8);
+        // Set the color table (used to translate colour indexes to qRgb values)
+        image.setColorCount(256);
+        for(int i = 0; i < 256; i++)
+        {
+            image.setColor(i, qRgb(i, i, i));
+        }
+        // Copy input Mat
+        uchar *pSrc = mat.data;
+        for(int row = 0; row < mat.rows; row ++)
+        {
+            uchar *pDest = image.scanLine(row);
+            memcpy(pDest, pSrc, mat.cols);
+            pSrc += mat.step;
+        }
+        return image;
+    }
+    // 8-bits unsigned, NO. OF CHANNELS = 3
+    else if(mat.type() == CV_8UC3)
+    {
+        // Copy input Mat
+        const uchar *pSrc = (const uchar*)mat.data;
+        // Create QImage with same dimensions as input Mat
+        QImage image(pSrc, mat.cols, mat.rows, mat.step, QImage::Format_RGB888);
+        return image.rgbSwapped();
+    }
+    else if(mat.type() == CV_8UC4)
+    {
+        qDebug() << "CV_8UC4";
+        // Copy input Mat
+        const uchar *pSrc = (const uchar*)mat.data;
+        // Create QImage with same dimensions as input Mat
+        QImage image(pSrc, mat.cols, mat.rows, mat.step, QImage::Format_ARGB32);
+        return image.copy();
+    }
+    else
+    {
+        qDebug() << "ERROR: Mat could not be converted to QImage.";
+        return QImage();
     }
 }
